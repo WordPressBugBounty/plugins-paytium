@@ -354,6 +354,7 @@
                     wp.media.editor.send.attachment = function(props, attachment) {
 
                         let data = {
+                                nonce: paytium.nonce,
                                 action: 'paytium_emails_attachments',
                                 attachment_id: attachment.id
                             },
@@ -491,5 +492,4 @@
     });
 
 }(jQuery));
-
 

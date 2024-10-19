@@ -56,6 +56,11 @@ class Paytium {
 	public $session;
 
 	/**
+	 * @var $admin PT_Admin class.
+	 */
+	public $admin;
+
+	/**
 	 * @since 1.0.0
 	 * @var $api PT_API API class.
 	 */
@@ -66,6 +71,8 @@ class Paytium {
 	 * @var $post_types  PT_Post_Types class.
 	 */
 	public $post_types;
+
+	private $load_public_scripts = false;
 
 
 	/**
@@ -137,6 +144,9 @@ class Paytium {
 		add_action( 'admin_enqueue_scripts', array ( $this, 'paytium_toolbar_css' ) );
 		add_action( 'wp_enqueue_scripts', array ( $this, 'paytium_toolbar_css' ) );
 
+		// Paytium scripts
+		add_action( 'wp_enqueue_scripts', array ( $this, 'paytium_load_scripts' ) );
+
         // Paytium Admin Search
         add_action( 'pre_get_posts', array($this, 'paytium_admin_search'));
 		add_filter( 'posts_request_ids', array($this, 'paytium_subscriptions_admin_search'), 10, 2);
@@ -170,32 +180,40 @@ class Paytium {
 
 		foreach ( $posts as $post ) {
 			if ( ( strpos( $post->post_content, '[paytium' ) !== false ) || true == get_option( 'paytium_always_enqueue' ) ) {
-				// Load CSS
-				wp_enqueue_style( $this->plugin_slug . '-public' );
-				wp_enqueue_style( $this->plugin_slug . '-jquery-ui' );
 
-				// Load JS
-				wp_enqueue_script( $this->plugin_slug . '-public' );
-				wp_enqueue_script( $this->plugin_slug . '-parsley' );
-				wp_enqueue_script( $this->plugin_slug . '-parsley-nl' );
-
-				// Localize the site script with new language strings
-				wp_localize_script( $this->plugin_slug . '-public', 'paytium_localize_script_vars', array (
-				        'admin_ajax_url' => admin_url( 'admin-ajax.php' ),
-						'amount_too_low' => __( 'No (valid) amount entered or amount is too low!', 'paytium' ),
-						'subscription_first_payment' => __( 'First payment:', 'paytium' ),
-						'field_is_required' => __( 'Field \'%s\' is required!', 'paytium' ),
-						'processing_please_wait' => __( 'Processing, please wait...', 'paytium' ),
-						'validation_failed' => __( 'Validation failed, please try again.', 'paytium' ),
-					)
-				);
-
+				$this->load_public_scripts = true;
 				break;
 			}
 		}
 
 		return $posts;
 
+	}
+
+
+	function paytium_load_scripts() {
+
+		if ($this->load_public_scripts) {
+			// Load CSS
+			wp_enqueue_style( $this->plugin_slug . '-public' );
+			wp_enqueue_style( $this->plugin_slug . '-jquery-ui' );
+
+			// Load JS
+			wp_enqueue_script( $this->plugin_slug . '-public' );
+			wp_enqueue_script( $this->plugin_slug . '-parsley' );
+			wp_enqueue_script( $this->plugin_slug . '-parsley-nl' );
+
+			// Localize the site script with new language strings
+			wp_localize_script( $this->plugin_slug . '-public', 'paytium_localize_script_vars', array (
+					'admin_ajax_url' => admin_url( 'admin-ajax.php' ),
+					'amount_too_low' => __( 'No (valid) amount entered or amount is too low!', 'paytium' ),
+					'subscription_first_payment' => __( 'First payment:', 'paytium' ),
+					'field_is_required' => __( 'Field \'%s\' is required!', 'paytium' ),
+					'processing_please_wait' => __( 'Processing, please wait...', 'paytium' ),
+					'validation_failed' => __( 'Validation failed, please try again.', 'paytium' ),
+				)
+			);
+        }
 	}
 
 	/**
@@ -1202,4 +1220,3 @@ class Paytium {
 		update_user_meta($user_id, 'show_cancel_subscription', $show_cancel_subscription);
 	}
 }
-

@@ -30,7 +30,7 @@ function pt_show_payment_details( $content ) {
 
 		$pretty_status = __( $payment->get_status() );
 
-		paytium_logger( print_r( $payment->id, true ) . ' - ' . 'Shown after payment message.' );
+		paytium_logger( print_r( $payment->id, true ) . ' - ' . 'Shown after payment message.',__FILE__,__LINE__ );
 
 		$payment_status_style = ( $payment->status == 'paid' || $payment->no_payment == true ) ? 'pt-payment-details-wrap' : 'pt-payment-details-wrap pt-payment-details-error';
 

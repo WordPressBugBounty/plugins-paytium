@@ -20,7 +20,7 @@ function enabled_any_mode_log( $option_name, $new_value ) {
 	$new_value = $new_value == '1' ? 'live' : 'test';
 	$user      = wp_get_current_user()->data;
 	$message   = 'User "' . $user->user_login . ' (id: ' . $user->ID . ')" enabled "' . $new_value . '" mode';
-	paytium_logger( __( $message, 'paytium' ) );
+	paytium_logger( __( $message, 'paytium' ),__FILE__,__LINE__ );
 
 }
 
@@ -37,7 +37,7 @@ function switched_mode_log( $old_value, $new_value ) {
 	$new_value = $new_value == '1' ? 'live' : 'test';
 	$user      = wp_get_current_user()->data;
 	$message   = 'Switched from "' . $old_value . '" to "' . $new_value . '" mode by user "' . $user->user_login . ' (id: ' . $user->ID . ')"';
-	paytium_logger( __( $message, 'paytium' ) );
+	paytium_logger( __( $message, 'paytium' ),__FILE__,__LINE__ );
 
 }
 
@@ -52,5 +52,5 @@ function switched_payment_status_log( $payment_post_id, $old_status, $new_status
 
 	$user    = wp_get_current_user()->data;
 	$message = $payment_post_id . ' - Status updated from "' . $old_status . '" to "' . $new_status . '" by user "' . $user->user_login . ' (id: ' . $user->ID . ')"';
-	paytium_logger( __( $message, 'paytium' ) );
+	paytium_logger( __( $message, 'paytium' ),__FILE__,__LINE__ );
 }

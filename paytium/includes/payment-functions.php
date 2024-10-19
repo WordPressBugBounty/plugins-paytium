@@ -577,7 +577,9 @@ function pt_cancel_subscription() {
 
 		if (!current_user_can('administrator') && get_post_field ('post_author', $pt_subscription_id) != get_current_user_id()) {
 
-			paytium_logger($payment_id . '/' . $subscription_id . '/' . $customer_id . ' - ' . 'Subscription error: User (ID: '.get_current_user_id().') was trying to cancel subscription '.$pt_subscription_id.' ('.$subscription_id.')  without permission');
+			paytium_logger($payment_id . '/' . $subscription_id . '/' . $customer_id . ' - ' . 'Subscription error: User (ID: '.
+				get_current_user_id().') was trying to cancel subscription '.$pt_subscription_id.' ('.$subscription_id.')  without permission',__FILE__,__LINE__);
+
 			wp_send_json_error();
 		}
 
@@ -598,7 +600,7 @@ function pt_cancel_subscription() {
 		require_once('class-pt-item.php');
 		do_action('paytium_cancel_subscription_email', (int)$sub_id);
 
-		paytium_logger( $payment_id . '/' . $subscription_id . '/' . $customer_id . ' - ' . 'Subscription canceled by admin from Paytium.' );
+		paytium_logger( $payment_id . '/' . $subscription_id . '/' . $customer_id . ' - ' . 'Subscription canceled by admin from Paytium.',__FILE__,__LINE__ );
 
 		// Send response details to javascript for AJAX processing
 		$response = array (
@@ -610,7 +612,7 @@ function pt_cancel_subscription() {
 
 	}
 	catch ( Mollie\Api\Exceptions\ApiException $e ) {
-        paytium_logger( $payment_id . '/' . $subscription_id . '/' . $customer_id . ' - ' . 'Subscription error: ' . htmlspecialchars( $e->getMessage() ) );
+        paytium_logger( $payment_id . '/' . $subscription_id . '/' . $customer_id . ' - ' . 'Subscription error: ' . htmlspecialchars( $e->getMessage() ),__FILE__,__LINE__ );
 		wp_send_json_error();
 	}
 

@@ -460,7 +460,7 @@ function pt_process_payment() {
 					pt_update_payment_meta( $paytium_payment['subscription_id'], array('pt-customer-id'  => $paytium_payment['customer_id']));
 				}
 			} else {
-				paytium_logger ( $paytium_payment['post_id'] . ' - ' . 'No Mollie Customer created, no fields with type name & email found or no payment form.');
+				paytium_logger ( $paytium_payment['post_id'] . ' - ' . 'No Mollie Customer created, no fields with type name & email found or no payment form.',__FILE__,__LINE__);
 			}
 
 			// Update payment description with Paytium payment ID and add filter so developers can manipulate it
@@ -522,7 +522,7 @@ function pt_process_payment() {
 				update_post_meta( $paytium_payment['post_id'], '_status', 'failed' );
 			}
 
-			paytium_logger( $paytium_payment['post_id'] . ' - ' . 'Creating payment failed: ' . htmlspecialchars( $e->getMessage() ) );
+			paytium_logger( $paytium_payment['post_id'] . ' - ' . 'Creating payment failed: ' . htmlspecialchars( $e->getMessage() ),__FILE__,__LINE__ );
 
 			if ( strpos( $e->getMessage(), 'No suitable payment methods found' ) !== false ) {
 				echo sprintf( __( 'Review %sthis FAQ%s to solve this problem. ', 'paytium' ), '<a href="https://www.paytium.nl/handleiding/veelgestelde-vragen/foutmelding-no-suitable-payment-methods-found/">', '</a>' );
@@ -767,7 +767,7 @@ function pt_add_all_field_data_to_meta_array( $meta ) {
 				$attachment_id = media_handle_upload( "upload_file", 0 );
 
 				if ( is_wp_error( $attachment_id ) ) {
-					paytium_logger('Error code '.$attachment_id->get_error_code().' : '.$attachment_id->get_error_message());
+					paytium_logger('Error code '.$attachment_id->get_error_code().' : '.$attachment_id->get_error_message(),__FILE__,__LINE__);
 				}
 				else $files_data[$file['name']] =  wp_get_attachment_url($attachment_id);
 			}
@@ -1067,7 +1067,7 @@ function paytium_create_new_mollie_customer( $mollie_customer, $payment_id ) {
 		"email" => $mollie_customer['email'],
 	) );
 
-	paytium_logger( $payment_id . ' - ' .'New customer created at Mollie for: ' . implode( ', ', $mollie_customer ) . ', ' . $customer->id );
+	paytium_logger( $payment_id . ' - ' .'New customer created at Mollie for: ' . implode( ', ', $mollie_customer ) . ', ' . $customer->id,__FILE__,__LINE__ );
 
 	return $customer->id;
 }

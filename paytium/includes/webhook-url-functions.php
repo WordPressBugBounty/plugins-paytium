@@ -34,7 +34,7 @@ function pt_payment_update_webhook( $request ) {
 
 		try {
 
-			paytium_logger( $mollie_payment_id . ' - ' . 'Webhook called.' );
+			paytium_logger( $mollie_payment_id . ' - ' . 'Webhook called.',__FILE__,__LINE__ );
 
 			$payment = pt_get_payment_by_payment_id( $mollie_payment_id );
 
@@ -42,6 +42,8 @@ function pt_payment_update_webhook( $request ) {
 			pt_set_paytium_key( $mode );
 
 			$mollie = $pt_mollie->payments->get( $mollie_payment_id );
+
+			$status = pt_get_new_payment_status($mollie);
 
 			//
 			// START UNKNOWN PAYMENT PROCESSING - maybe it's a renewal payment for a subscription?
@@ -51,18 +53,18 @@ function pt_payment_update_webhook( $request ) {
 
 				// Is there a subscription ID?
 				if ( $mollie->subscriptionId == null ) {
-					paytium_logger( $mollie->id . ' - ' . 'Webhook: No known payment, no subscriptionId!' );
+					paytium_logger( $mollie->id . ' - ' . 'Webhook: No known payment, no subscriptionId!',__FILE__,__LINE__ );
 					pt_set_http_response_code_and_exit( '400' );
 				}
 
 				$first_payment = pt_get_payment_by_subscription_id( $mollie->subscriptionId );
 
 				if ( $first_payment == null ) {
-					paytium_logger( $mollie->id . ' - ' . 'Webhook: No payment or subscription found.' );
+					paytium_logger( $mollie->id . ' - ' . 'Webhook: No payment or subscription found.',__FILE__,__LINE__ );
 					pt_set_http_response_code_and_exit( '400' );
 				}
 
-				paytium_logger( $mollie->id . ' - ' . 'Webhook: Start unknown payment processing.' );
+				paytium_logger( $mollie->id . ' - ' . 'Webhook: Start unknown payment processing.',__FILE__,__LINE__ );
 
 				$pt_subscription_id = pt_get_subscription_id_by_mollie_subscription_id( $mollie->subscriptionId );
 
@@ -155,7 +157,7 @@ function pt_payment_update_webhook( $request ) {
 				) );
 
 				$this_payment = pt_get_payment($old_payment_post_id);
-				$this_payment->set_status( $mollie->status );
+				$this_payment->set_status( $status );
 
 				$subscription_payments = unserialize(get_post_meta((int)$pt_subscription_id, '_payments', true));
 				$subscription_payments[] = $old_payment_post_id;
@@ -214,7 +216,7 @@ function pt_payment_update_webhook( $request ) {
 				// Add hook after webhook processing of subscription renewal payments
 				do_action( 'paytium_webhook_subscription_renewal_payment', $payment_latest );
 
-				paytium_logger( $mollie->id . ' - ' . 'Webhook: Completed unknown payment processing successfully.' );
+				paytium_logger( $mollie->id . ' - ' . 'Webhook: Completed unknown payment processing successfully.',__FILE__,__LINE__ );
 				pt_set_http_response_code_and_exit( '200' );
 			}
 
@@ -225,10 +227,12 @@ function pt_payment_update_webhook( $request ) {
 			//
 			// START REGULAR PAYMENT PROCESSING - Update status and payment method for regular payments.
 			//
-			$payment->set_status( $mollie->status );
+
+			$payment->set_status( $status );
 			$payment->set_payment_method( $mollie->method );
 
-			paytium_logger( $payment->id.'/'.$mollie->id.': new status - '.$mollie->status );
+			paytium_logger( $payment->id.'/'.$mollie->id.': new status - '.$status, __FILE__,__LINE__);
+			paytium_logger( $payment->id.'/'.$mollie->id.': ', __FILE__,__LINE__);
 
 			if($payment->status == 'paid' && !$payment->subscription_id) {
 				update_user_meta( get_post($payment->id)->post_author, '_last_paid_date', date('Y-m-d H:i:s'));
@@ -245,9 +249,9 @@ function pt_payment_update_webhook( $request ) {
 				if ( $payment->subscription_id != '' ) {
 
 					// Charge back renewal payment
-					if ( $mollie->subscriptionId != null && $mollie->status == 'charged_back' ) {
+					if ( $mollie->subscriptionId != null && $status == 'charged_back' ) {
 
-						paytium_logger( $mollie->id . '/' . $mollie->subscriptionId . ' - ' . 'Webhook: renewal payment charged back' );
+						paytium_logger( $mollie->id . '/' . $mollie->subscriptionId . ' - ' . 'Webhook: renewal payment charged back',__FILE__,__LINE__ );
 
 						$notification_counter = get_option( 'paytium_notification_counter' ) ? (int) get_option( 'paytium_notification_counter' ) + 1 : 1;
 
@@ -264,7 +268,7 @@ function pt_payment_update_webhook( $request ) {
 
 						paytium_add_notification( $notification_counter, $charge_back_notification );
 
-						paytium_logger( $mollie->id . '/' . $mollie->subscriptionId . ' - ' . 'Charge back notification added' );
+						paytium_logger( $mollie->id . '/' . $mollie->subscriptionId . ' - ' . 'Charge back notification added',__FILE__,__LINE__ );
 						update_option( 'paytium_notification_counter', $notification_counter );
 					}
 
@@ -275,7 +279,7 @@ function pt_payment_update_webhook( $request ) {
 					// So no paid first payment, means no subscription!
 
 					// Check that payment doesn't already belong to a subscription (at Mollie), and is paid
-					if ( $mollie->subscriptionId == null && $mollie->status == 'paid' ) {
+					if ( $mollie->subscriptionId == null && $status == 'paid' ) {
 
 						// Check if the customer has a valid mandate
 						$valid_mandate = pt_does_customer_have_valid_mandate( $payment->customer_id );
@@ -288,7 +292,8 @@ function pt_payment_update_webhook( $request ) {
 							throw new Mollie\Api\Exceptions\ApiException ( 'Mandate was invalid, subscription not created.' );
 						}
 
-						paytium_logger( $mollie->id . ' - ' . 'Webhook: subscription processing: valid mandate: ' . $valid_mandate . ', interval: ' . $payment->subscription_interval . ', times: ' . $payment->subscription_times );
+						paytium_logger( $mollie->id . ' - ' . 'Webhook: subscription processing: valid mandate: ' . $valid_mandate . ', interval: ' .
+							$payment->subscription_interval . ', times: ' . $payment->subscription_times,__FILE__,__LINE__ );
 
 						$webhook_url = add_query_arg( 'pt-webhook', 'paytium', home_url( '/' ) );
 
@@ -309,7 +314,7 @@ function pt_payment_update_webhook( $request ) {
 						// Create the subscription at Mollie
 						$subscription = $pt_mollie->subscriptions->createForId( $payment->customer_id, $create_subscription_data );
 
-						paytium_logger( $mollie->id . '/' . $subscription->id . ' - ' . 'Webhook: new subscription created, ID via webhook: ' . $subscription->id );
+						paytium_logger( $mollie->id . '/' . $subscription->id . ' - ' . 'Webhook: new subscription created, ID via webhook: ' . $subscription->id,__FILE__,__LINE__ );
 
 						// Set $subscription_webhook to 1 if the webhook is registered at Mollie
 						$subscription_webhook = 0;
@@ -376,8 +381,9 @@ function pt_payment_update_webhook( $request ) {
 
 					} elseif ($mollie->subscriptionId == null ) {
 
-						if ( $mollie->status == 'cancelled' || $mollie->status == 'expired' || $mollie->status == 'failed' ) {
-							paytium_logger( $mollie->id . '/' . $mollie->subscriptionId . ' - ' . 'Webhook: First payment not paid for (' . $mollie->subscriptionId . '), didn\'t create a subscription.' );
+						if ( $status == 'cancelled' || $status == 'expired' || $status == 'failed' ) {
+							paytium_logger( $mollie->id . '/' . $mollie->subscriptionId . ' - ' . 'Webhook: First payment not paid for (' .
+								$mollie->subscriptionId . '), didn\'t create a subscription.',__FILE__,__LINE__ );
 							throw new Mollie\Api\Exceptions\ApiException ( 'First payment not paid, didn\'t create a subscription.' );
 						}
 					}
@@ -398,7 +404,7 @@ function pt_payment_update_webhook( $request ) {
 				) );
 				pt_update_payment_meta( $payment->id, $update_payment_details );
 
-				paytium_logger( $payment->id . '/' . $mollie->id . ' - ' . 'Webhook: processing subscription failed: ' . htmlspecialchars( $e->getMessage() ) );
+				paytium_logger( $payment->id . '/' . $mollie->id . ' - ' . 'Webhook: processing subscription failed: ' . htmlspecialchars( $e->getMessage() ),__FILE__,__LINE__ );
 			}
 
 			//
@@ -417,7 +423,7 @@ function pt_payment_update_webhook( $request ) {
 
 
 		} catch ( Exception $e ) {
-			paytium_logger( $mollie_payment_id . ' - Webhook: processing failed: ' . $e->getMessage() );
+			paytium_logger( $mollie_payment_id . ' - Webhook: processing failed: ' . $e->getMessage(),__FILE__,__LINE__ );
 			pt_set_http_response_code_and_exit( '400' );
 		}
 
@@ -462,8 +468,7 @@ function pt_does_customer_have_valid_mandate( $customer_id ) {
  *
  * @param int $status_code
  */
-function pt_set_http_response_code_and_exit ($status_code)
-{
+function pt_set_http_response_code_and_exit ($status_code) {
 	if (PHP_SAPI !== 'cli' && !headers_sent())
 	{
 		if (function_exists("http_response_code"))
@@ -476,4 +481,18 @@ function pt_set_http_response_code_and_exit ($status_code)
 		}
 	}
 	exit();
+}
+
+function pt_get_new_payment_status($mollie) {
+
+	if (!empty($mollie->amountRefunded) && $mollie->amountRefunded->value >= 1) {
+		paytium_logger(print_r($mollie->amountRefunded->value,true), __FILE__,__LINE__);
+		$status = 'refunded';
+	}
+	elseif (!empty($mollie->amountChargedBack) && $mollie->amountChargedBack->value >= 1) {
+		$status = 'charged_back';
+	}
+	else $status = $mollie->status;
+
+	return $status;
 }

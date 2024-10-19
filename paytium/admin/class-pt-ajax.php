@@ -307,16 +307,21 @@ class PT_Admin_AJAX {
 
 	public function paytium_emails_attachments() {
 
-		$attachment_id = isset($_POST['attachment_id']) ? $_POST['attachment_id'] : false;
+		check_ajax_referer( 'paytium-ajax-nonce', 'nonce' );
 
-		if ($attachment_id) {
+		if (current_user_can('edit_posts')) {
 
-			$thumbnail = wp_get_attachment_image_src($attachment_id, 'thumbnail');
-			$thumbnail_url = $thumbnail ? $thumbnail[0] : $thumbnail;
+			$attachment_id = isset($_POST['attachment_id']) ? $_POST['attachment_id'] : false;
 
-			wp_send_json(array('result' => 'success', 'thumbnail' => $thumbnail_url));
+			if ($attachment_id) {
+
+				$thumbnail = wp_get_attachment_image_src($attachment_id, 'thumbnail');
+				$thumbnail_url = $thumbnail ? $thumbnail[0] : $thumbnail;
+
+				wp_send_json(array('result' => 'success', 'thumbnail' => $thumbnail_url));
+			}
+			else wp_send_json(array('result' => 'error'));
 		}
-		else wp_send_json(array('result' => 'error'));
 	}
 
 	/**

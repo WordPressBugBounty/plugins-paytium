@@ -2,7 +2,7 @@
 Contributors: davdebcom
 Requires at least: 6.2
 Tested up to: 6.6
-Stable tag: 4.4.10
+Stable tag: 4.4.11
 Requires PHP: 7.4
 Tags: ideal, mollie, payments, donation, credit card, payment, wordpress payments, payment form, wordpress donation plugin, mollie donations, doneren met mollie, mollie forms
 License: GPLv2 or later
@@ -166,6 +166,17 @@ Yes, you can! You can use the free plugin Say What, or consider using the commer
 
 == Changelog ==
 
+= 4.4.11 – October 19 , 2024 =
+### All Paytium versions
+* Tested up to Wordpress 6.6.4
+FIX :
+* PHP notices
+* Email attachment security issue addressed
+* Update chargeback/refund status change handle
+### Plus, Pro, Premium
+FIX:
+* MailPoet API integration update
+
 = 4.4.10 – August 6 , 2024 =
 ### All Paytium versions
 * Mollie library update 2 
@@ -177,18 +188,17 @@ Yes, you can! You can use the free plugin Say What, or consider using the commer
 
 = 4.4.8 – August 1 , 2024 =
 ### All Paytium versions
-
-Tested up to WordPress 6.6 
-FIX
+* Tested up to WordPress 6.6
+FIX:
 * Multiple open fields in simple product or service ‘vrij bedrag’ for total amount
 * “data-pt-price“ of the open amount field validation check
-NEW 
-* Update translations file 
-* Update public.js file 
-
+NEW:
+* Update translations file
+* Update public.js file
 ### Plus, Pro, Premium
-FIX 
-*Subscription discount code for recurring payments
+FIX:
+*Subscription discount code for recurring payment
+
 
 = 4.4.7 – June 11, 2024 =
 ### All Paytium versions

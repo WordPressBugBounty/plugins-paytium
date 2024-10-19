@@ -22,7 +22,7 @@ function paytium_limit_data_processing( $payment_post_id ) {
         $payment_post_id = $payment_post_id->id;
     }
 
-	paytium_logger( $payment_post_id . ' - ' . 'Start processing limit data for payment.');
+	paytium_logger( $payment_post_id . ' - ' . 'Start processing limit data for payment.',__FILE__,__LINE__);
 
 	$payment_field_data = get_post_meta( $payment_post_id, null, true );
 
@@ -65,11 +65,11 @@ function paytium_limit_data_processing( $payment_post_id ) {
         }
     }
 
-    paytium_logger(print_r($current_item_limits,true));
+    paytium_logger(print_r($current_item_limits,true),__FILE__,__LINE__);
 
 
     if (empty($current_item_limits)) {
-	    paytium_logger( $payment_post_id . ' - ' . 'No limit data found for payment.');
+	    paytium_logger( $payment_post_id . ' - ' . 'No limit data found for payment.',__FILE__,__LINE__);
 	    return;
     }
 
@@ -83,7 +83,7 @@ function paytium_limit_data_processing( $payment_post_id ) {
 
         update_option('paytium_item_limits', serialize($paytium_item_limits));
 
-	    paytium_logger( $payment_post_id . ' - ' . 'Add limit data to existing paytium_item_limits for payment.');
+	    paytium_logger( $payment_post_id . ' - ' . 'Add limit data to existing paytium_item_limits for payment.',__FILE__,__LINE__);
     }
     else {
 
@@ -92,7 +92,7 @@ function paytium_limit_data_processing( $payment_post_id ) {
         }
 
         update_option('paytium_item_limits', serialize($current_item_limits));
-	    paytium_logger( $payment_post_id . ' - ' . 'Add limit data to new paytium_item_limits for payment.');
+	    paytium_logger( $payment_post_id . ' - ' . 'Add limit data to new paytium_item_limits for payment.',__FILE__,__LINE__);
 
     }
 

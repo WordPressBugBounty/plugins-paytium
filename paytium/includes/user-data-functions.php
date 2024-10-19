@@ -230,7 +230,7 @@ function paytium_user_data_processing( $payment_post_id ) {
         }
 
 		if( is_wp_error( $user_id) ) {
-            paytium_logger( $payment_post_id . ' - ' . 'Creating a new user failed: ' . $user_id->get_error_message());
+            paytium_logger( $payment_post_id . ' - ' . 'Creating a new user failed: ' . $user_id->get_error_message(),__FILE__,__LINE__);
 		} else {
 			wp_new_user_notification( $user_id, null, 'both' );
 		}
@@ -309,6 +309,6 @@ function paytium_add_user_role($role) {
 			)
 		);
 
-		paytium_logger('New user role "'.$role.'" has been added');
+		paytium_logger('New user role "'.$role.'" has been added',__FILE__,__LINE__);
 	}
 }

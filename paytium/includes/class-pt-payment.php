@@ -861,6 +861,7 @@ class PT_Payment {
 
 		$payment_data = array(
 			'items-table' => array( $items_table ),
+			'extended-items-table' => array( $items_table ),
 			'total' => array( pt_float_amount_to_currency( $this->get_total(), $this->currency ) ),
 			'total-excl-tax' => array( pt_float_amount_to_currency( $this->get_total() - $this->get_tax_total(), $this->currency ) ),
 			'tax-total' => array( pt_float_amount_to_currency( $this->get_tax_total(), $this->currency ) ),

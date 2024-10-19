@@ -58,11 +58,16 @@ function pt_get_api_key( $mode = 'live' ) {
  * Log error messages for Paytium into /wp-content/plugins/paytium/logs.txt
  *
  * @since   2.2.0
+ * @param $message
+ * @param string $file
+ * @param string $line
  */
-function paytium_logger( $message ) {
+function paytium_logger( $message, $file = '', $line = '' ) {
 
 
 	$pt_log_dir =  PT_PATH . 'logs/';
+	$file = $file ? $file : __FILE__;
+	$line = $line ? $line : __LINE__;
 
 	if ( wp_mkdir_p($pt_log_dir) && ! file_exists(  $pt_log_dir . '.htaccess' ) ) {
 		$fh = @fopen(  $pt_log_dir  . '.htaccess', 'w' );
@@ -74,7 +79,7 @@ function paytium_logger( $message ) {
 
     $date = date('d/m/y h:i:s', time());
     $newfile = $pt_log_dir . 'paytium-' . date('Y-m-d') . '.txt';
-    $text = '[' . $date . ' UTC]['.__FILE__.':'.__LINE__.'] '. $message . PHP_EOL;
+    $text = '[' . $date . ' UTC]['.$file.':'.$line.'] '. $message . PHP_EOL;
 
     // Check that file exists and can be opened
 	if ( ( $fht = @fopen( $newfile, 'rb' ) !== false ) && file_exists( $newfile ) ) {
