@@ -23,7 +23,6 @@ $collected_fields    = array ();
 $collected_discounts = array ();
 $form_currency		 = array ();
 
-
 /**
  * Check that public.js is really loaded and otherwise add notification for admin
  */
@@ -42,7 +41,7 @@ function paytium_check_javascript_loaded() {
 				'slug'    => 'javascript',
 				'message' => sprintf( __( '[PAYTIUM] Paytium has detected that a required JavaScript file isn\'t always loaded when your users view a form. ' .
 				                          'Please view %sJavaScript problemen en/of extra velden worden niet opgeslagen%s to fix this and otherwise ' .
-				                          'contact support@paytium.nl for assistance.' ), '<a href="https://www.paytium.nl/handleiding/veelgestelde-vragen/" target="_blank">', '</a>' )
+				                          'contact support@paytium.nl for assistance.', 'paytium' ), '<a href="https://www.paytium.nl/handleiding/veelgestelde-vragen/" target="_blank">', '</a>' )
 			);
 
 			paytium_add_notification( $notification_counter, $notification );
@@ -167,10 +166,10 @@ function pt_paytium_shortcode( $attr, $content = null ) {
 		$args = array (
 			'echo'           => false,
 			'form_id'        => 'loginform',
-			'label_username' => __( 'Username' ),
-			'label_password' => __( 'Password' ),
-			'label_remember' => __( 'Remember Me' ),
-			'label_log_in'   => __( 'Log In' ),
+			'label_username' => __( 'Username', 'paytium' ),
+			'label_password' => __( 'Password', 'paytium' ),
+			'label_remember' => __( 'Remember Me', 'paytium' ),
+			'label_log_in'   => __( 'Log In', 'paytium' ),
 			'id_username'    => 'user_login',
 			'id_password'    => 'user_pass',
 			'id_remember'    => 'rememberme',
@@ -184,6 +183,8 @@ function pt_paytium_shortcode( $attr, $content = null ) {
 
 	// Add Parsley JS form validation attribute here.
 	$html .= '<form method="POST" action="" class="pt-checkout-form" id="' . esc_attr( $form_id ) . '" data-pt-id="' . $pt_id . '" data-parsley-validate enctype="multipart/form-data" data-currency="'.$currency.'">';
+
+	$html .= wp_nonce_field('paytium_form_nonce_'.$pt_id, 'paytium_form_nonce');
 
 	// Check if key's are entered at all, otherwise throw error message
 	if ( empty( $mollie_api_key ) && current_user_can( 'manage_options' ) ) {
@@ -295,7 +296,7 @@ function pt_paytium_shortcode( $attr, $content = null ) {
 		$html .= '<label for="pt-customer-details-country">Land:</label><input type="text" name="pt-customer-details-country" class="pt-customer-details-country" value="" />';
 	}
 
-	if (is_file( PT_PATH . 'paytium-pro.php' ) || is_file( PT_PATH . 'paytium-premium.php' )) {
+	if (is_file( PT_PATH . 'paytium-pro.php' ) || is_file( PT_PATH . 'paytium-premium.php' ) || is_file( PT_PATH . 'paytium-pp.php' )) {
 		$html .= '<input type="hidden" name="pt-paytium-pro" id="pt-paytium-pro" value="true" />';
 	}
 
@@ -593,7 +594,7 @@ function pt_cf_checkbox_new( $attr ) {
 
 	$html = ( ! empty( $label ) ? '<label id="pt-cf-checkbox-label">' . esc_html($label) . ':</label>' : '' );
 
-	$html .= '<div class="pt-checkbox-group">';
+	$html .= '<div class="pt-checkbox-group" data-pt-user-label="'.esc_attr($label).'">';
 
     $i = $k = $g = 1;
     foreach ($options as $option) {
@@ -611,7 +612,7 @@ function pt_cf_checkbox_new( $attr ) {
 
 		} elseif ( ! empty( $amounts ) ) {
 			$amount = $amounts[ $i - 1 ];
-			$option_name = $option . ' - '. $currency_symbol_after ? $amount . ' ' . $currency : $currency . ' ' . $amount;
+			$option_name = $option . ' - '. ($currency_symbol_after ? $amount . ' ' . $currency : $currency . ' ' . $amount);
 			$value = pt_user_amount_to_float( $amount );
 		}
 
@@ -1230,7 +1231,7 @@ function pt_field( $attributes ) {
 
 			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-radio' . $class . '">';
 			$html .= ( ! empty( $label ) ? '<label for="pt-field-radio">' . esc_html($label) . ':</label>' : '' );
-			$html .= '<div class="pt-radio-group">';
+			$html .= '<div class="pt-radio-group" data-pt-user-label="'.esc_attr($label).'">';
 
 
 			$i = 1;
@@ -1272,7 +1273,7 @@ function pt_field( $attributes ) {
 
 			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-checkbox' . $class . '">';
 			$html .= ( ! empty( $label ) ? '<label for="pt-field-checkbox">' . esc_html($label) . ':</label>' : '' );
-			$html .= '<div class="pt-checkbox-group">';
+			$html .= '<div class="pt-checkbox-group" data-pt-user-label="'.esc_attr($label).'">';
 
 
 			$i = 1;
@@ -1280,7 +1281,7 @@ function pt_field( $attributes ) {
 
 				$option = trim( $option );
 
-				$html .= '<label><input type="checkbox" id="pt-field-checkbox-' . $counter . '" name="pt-field-checkbox-' . $counter . '[]" class="pt-field pt-field-checkbox" value="' . $option;
+				$html .= '<label title="'.esc_attr($option).'"><input type="checkbox" id="pt-field-checkbox-' . $counter . '" name="pt-field-checkbox-' . $counter . '[]" class="pt-field pt-field-checkbox" value="' . $option;
 				$html .= '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" data-parsley-multiple="checkbox-'.$ptfg_counter.'" data-parsley-errors-container=".pt-checkbox-group-errors-'.$ptfg_counter.'" " ' . $required;
 				$html .= ' value="' . $option . '" >';
 
@@ -2005,7 +2006,7 @@ function pt_subscription( $attr ) {
 		return;
 	}
 
-	global $counter, $ptfg_counter;
+	global $counter, $ptfg_counter, $form_currency, $pt_id;
 	$ptfg_counter++;
 
 	if (!empty($attr)) {
@@ -2013,6 +2014,9 @@ function pt_subscription( $attr ) {
 			$attr[$key] = esc_attr($attribute);
 		}
 	}
+
+	$currency = is_file( PT_PATH . 'features/currency.php' ) ? get_paytium_currency_symbol($form_currency[$pt_id]) : '€';
+	$currency_symbol_after = $currency == 'NOK' || $currency == 'SEK' || $currency == 'fr.';
 
 	$attr = shortcode_atts( array (
 		'interval'            => '',
@@ -2079,14 +2083,14 @@ function pt_subscription( $attr ) {
 		// Don't use built-in checked() function here for now since we need "checked" in double quotes.
 		$option_html .= '<input type="radio" name="pt-subscription-optional" value="yes" ' . '" checked="checked" ' .
 		'class="pt-subscription-optional" data-parsley-errors-container=".pt-form-group">';
-		$option_html .= '<span>' . __('Yes') . '</span>';
+		$option_html .= '<span>' . __('Yes', 'paytium') . '</span>';
 		$option_html .= '</label>';
 
 		$option_html .= '<label title="' . esc_attr( 'No' ) . '" >';
 		// Don't use built-in checked() function here for now since we need "checked" in double quotes.
 		$option_html .= '<input type="radio" name="pt-subscription-optional" value="no" ' . '" ' .
 		                ' class="pt-subscription-optional" data-parsley-errors-container=".pt-form-group">';
-		$option_html .= '<span>' . __('No') . '</span>';
+		$option_html .= '<span>' . __('No', 'paytium') . '</span>';
 		$option_html .= '</label>';
 
 		$html .= $option_html;
@@ -2140,7 +2144,7 @@ function pt_subscription( $attr ) {
 			$option_html .= '<input type="radio" name="pt-subscription-interval-options" value="' . $value . '" data-pt-label="' . $option . '" data-pt-price="' . pt_user_amount_to_float( $interval_amounts[ $amounts_counter ] ) . '"' . checked( $interval, $option, false ) .
 			                ' class="pt-subscription-interval-options" data-parsley-errors-container=".pt-form-group" required>';
 
-			$option_html .= '<span>' . $option . '</span>';
+			$option_html .= '<span>' . esc_attr( $option ) . ' - '. ($currency_symbol_after ? $interval_amounts[$amounts_counter] . ' ' . $currency : $currency . ' ' . $interval_amounts[$amounts_counter]). '</span>';
 			$option_html .= '</label>';
 
 			$amounts_counter ++;
@@ -2319,7 +2323,7 @@ function pt_cf_radio( $attr ) {
 
 	$html = ( ! empty( $label ) ? '<label id="pt-cf-radio-label">' . esc_html($label) . ':</label>' : '' );
 
-	$html .= '<div class="pt-radio-group">';
+	$html .= '<div class="pt-radio-group" data-pt-user-label="'.esc_attr($label).'">';
 
     $i = $k = $g = 1;
     $option_html = '';
@@ -2338,7 +2342,7 @@ function pt_cf_radio( $attr ) {
 
 		} elseif ( ! empty( $amounts ) ) {
 			$amount = $amounts[ $i - 1 ];
-			$option_name = $option . ' - '. $currency_symbol_after ? $amount . ' ' . $currency : $currency . ' ' . $amount;
+			$option_name = $option . ' - '. ($currency_symbol_after ? $amount . ' ' . $currency : $currency . ' ' . $amount);
 			$value = pt_user_amount_to_float( $amount );
 		}
 

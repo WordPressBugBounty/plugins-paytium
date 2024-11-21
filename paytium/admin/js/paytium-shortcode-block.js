@@ -47,7 +47,7 @@
                     __('click here'),
                 ),
                 description = __(' to start from scratch without an example.' +
-                ' View all examples in the <a href="https://www.paytium.nl/handleiding/voorbeelden/" class="select-paytium-form-manual" target="_blank">manual</a>.');
+                    ' View all examples in the <a href="https://www.paytium.nl/handleiding/voorbeelden/" class="select-paytium-form-manual" target="_blank">manual</a>.');
 
             if ( Object.keys(attributes).length === 0 && attributes.constructor === Object) {
 
@@ -55,7 +55,7 @@
                     el(components.RadioControl, {
                         className: 'select-paytium-form',
                         label: label,
-                        value: attributes.selectedOption,
+                        selected: attributes.selectedOption,
                         options: [
                             { label: 'Simple product or donation, static amount', value: 1 },
                             { label: 'Simple product or donation, open amount', value: 2 },
@@ -67,72 +67,73 @@
                             { label: 'Subscription/recurring payment', value: 8 },
                         ],
                         onChange: function onChange(text) {
+                            console.log(text);
                             switch (parseInt(text)) {
                                 case 1:
                                     shortcode = '[paytium name="Form name" description="Payment description"]' +
-                                                '\n[paytium_field type="label" label="€19,95" amount="19,95" /]'+
-                                                '\n[paytium_button label="Pay" /]'+
-                                                '\n[/paytium]';
+                                        '\n[paytium_field type="label" label="€19,95" amount="19,95" /]'+
+                                        '\n[paytium_button label="Pay" /]'+
+                                        '\n[/paytium]';
                                     break;
                                 case 2:
                                     shortcode = '[paytium name="Form name" description="Donations"]' +
-                                                '\n[paytium_field type="open" label="Donation Amount:" default="25" /]' +
-                                                '\n[paytium_total label="Donate" /]' +
-                                                '\n[paytium_button label="Donate" /]' +
-                                                '\n[/paytium]';
+                                        '\n[paytium_field type="open" label="Donation Amount:" default="25" /]' +
+                                        '\n[paytium_total label="Donate" /]' +
+                                        '\n[paytium_button label="Donate" /]' +
+                                        '\n[/paytium]';
                                     break;
                                 case 3:
                                     shortcode = '[paytium name="Form name" description="Payment description"]' +
-                                                '\n[paytium_field type="label" label="Workshop tickets" amount="19.95" quantity="true" /]' +
-                                                '\n[paytium_field type="label" label="T-shirts" amount="49.95" quantity="true" /]' +
-                                                '\n[paytium_total label="Total" /]' +
-                                                '\n[paytium_button label="Order now" /]' +
-                                                '\n[/paytium]';
+                                        '\n[paytium_field type="label" label="Workshop tickets" amount="19.95" quantity="true" /]' +
+                                        '\n[paytium_field type="label" label="T-shirts" amount="49.95" quantity="true" /]' +
+                                        '\n[paytium_total label="Total" /]' +
+                                        '\n[paytium_button label="Order now" /]' +
+                                        '\n[/paytium]';
                                     break;
                                 case 4:
                                     shortcode = '[paytium name="Form name" description="Payment description"]' +
-                                                '\n[paytium_field type="dropdown" label="Options" options="9,95/19,95/29,95" options_are_amounts="true" /]' +
-                                                '\n[paytium_total /]' +
-                                                '\n[paytium_button label="Pay" /]' +
-                                                '\n[/paytium]';
+                                        '\n[paytium_field type="dropdown" label="Options" options="9,95/19,95/29,95" options_are_amounts="true" /]' +
+                                        '\n[paytium_total /]' +
+                                        '\n[paytium_button label="Pay" /]' +
+                                        '\n[/paytium]';
                                     break;
                                 case 5:
                                     shortcode = '[paytium name="Form name" description="Payment description"]' +
-                                                '\n[paytium_field type="radio" label="Options" options="9,95/19,95/29,95" options_are_amounts="true" /]' +
-                                                '\n[paytium_total /]' +
-                                                '\n[paytium_button label="Pay" /]' +
-                                                '\n[/paytium]';
+                                        '\n[paytium_field type="radio" label="Options" options="9,95/19,95/29,95" options_are_amounts="true" /]' +
+                                        '\n[paytium_total /]' +
+                                        '\n[paytium_button label="Pay" /]' +
+                                        '\n[/paytium]';
                                     break;
                                 case 6:
                                     shortcode = '[paytium name="Form name" description="Payment description"]' +
-                                                '\n[paytium_field type="email" label="Your email" required="true" /]' +
-                                                '\n[paytium_field type="label" label="Product ABC for €19,95" amount="19,95" /]' +
-                                                '\n[paytium_total /]' +
-                                                '\n[paytium_button label="Pay" /]' +
-                                                '\n[/paytium]';
+                                        '\n[paytium_field type="email" label="Your email" required="true" /]' +
+                                        '\n[paytium_field type="label" label="Product ABC for €19,95" amount="19,95" /]' +
+                                        '\n[paytium_total /]' +
+                                        '\n[paytium_button label="Pay" /]' +
+                                        '\n[/paytium]';
                                     break;
                                 case 7:
                                     shortcode = '[paytium name="Form name" description="Payment description"]' +
-                                                '\n[paytium_field type="email" label="Email" required="true" /]' +
-                                                '\n[paytium_field type="name" label="Name" required="true" /]' +
-                                                '\n[paytium_field type="text" label="Address" required="true" /]' +
-                                                '\n[paytium_field type="text" label="Postcode" required="true" /]' +
-                                                '\n[paytium_field type="text" label="City" required="true" /]' +
-                                                '\n[paytium_field type="text" label="Country" required="true" /]' +
-                                                '\n[paytium_field type="label" label="Product ABC for €19,95" amount="19,95" /]' +
-                                                '\n[paytium_total /]' +
-                                                '\n[paytium_button label="Pay" /]' +
-                                                '\n[/paytium]';
+                                        '\n[paytium_field type="email" label="Email" required="true" /]' +
+                                        '\n[paytium_field type="name" label="Name" required="true" /]' +
+                                        '\n[paytium_field type="text" label="Address" required="true" /]' +
+                                        '\n[paytium_field type="text" label="Postcode" required="true" /]' +
+                                        '\n[paytium_field type="text" label="City" required="true" /]' +
+                                        '\n[paytium_field type="text" label="Country" required="true" /]' +
+                                        '\n[paytium_field type="label" label="Product ABC for €19,95" amount="19,95" /]' +
+                                        '\n[paytium_total /]' +
+                                        '\n[paytium_button label="Pay" /]' +
+                                        '\n[/paytium]';
                                     break;
                                 case 8:
                                     shortcode = '[paytium name="Subscription store" description="Some subscription"]' +
-                                                '\n[paytium_subscription interval="1 days" times="99" /]' +
-                                                '\n[paytium_field type="name" label="Volledige naam" /]' +
-                                                '\n[paytium_field type="email" label="Jouw email" required="true" /]' +
-                                                '\n[paytium_field type="label" label="Subscription €99" amount="99" /]' +
-                                                '\n[paytium_total /]' +
-                                                '\n[paytium_button label="Subscribe" /]' +
-                                                '\n[/paytium]';
+                                        '\n[paytium_subscription interval="1 days" times="99" /]' +
+                                        '\n[paytium_field type="name" label="Volledige naam" /]' +
+                                        '\n[paytium_field type="email" label="Jouw email" required="true" /]' +
+                                        '\n[paytium_field type="label" label="Subscription €99" amount="99" /]' +
+                                        '\n[paytium_total /]' +
+                                        '\n[paytium_button label="Subscribe" /]' +
+                                        '\n[/paytium]';
                                     break;
                                 default:
                             }
@@ -163,6 +164,7 @@
                         value: attributes.text,
                         placeholder: __('Write shortcode here…'),
                         onChange: function onChange(text) {
+                            console.log(text);
                             return setAttributes({
                                 text: text
                             });

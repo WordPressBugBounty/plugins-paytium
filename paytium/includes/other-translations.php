@@ -34,7 +34,7 @@ __( 'Your license is not active for this URL', 'paytium' );
 __( 'This license is not valid for %s', 'paytium' );
 __( 'Your license has reached its activation limit', 'paytium' );
 __( 'Something went wrong, please verify everything and try again', 'paytium' );
-__( 'There is a new version of %s available.' );
+__( 'There is a new version of %s available.', 'paytium' );
 __( 'Please enter a valid license to receive this update.', 'paytium' );
 __( 'Your license for %s is active.', 'paytium' );
 __( 'Deactivate license', 'paytium');

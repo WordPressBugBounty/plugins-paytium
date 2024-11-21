@@ -92,7 +92,7 @@ class EDD implements ClientInterface {
 		}
 
 		if ( ! $body = json_decode( $response['body'] ) ) {
-			return new \WP_Error( 'empty', __( 'Empty body response' ) );
+			return new \WP_Error( 'empty', __( 'Empty body response', 'paytium' ) );
 		}
 
 		// All went well
@@ -172,7 +172,7 @@ class EDD implements ClientInterface {
 		}
 
 		if ( ! $body = json_decode( $response['body'] ) ) {
-			return new \WP_Error( 'empty', __( 'Empty body response' ) );
+			return new \WP_Error( 'empty', __( 'Empty body response', 'paytium' ) );
 		}
 
 		// All went well
@@ -181,7 +181,7 @@ class EDD implements ClientInterface {
 		}
 
 		// Something went wrong
-		return new \WP_Error( 'error', __( 'Something went wrong, unable to deactivate your license' ) );
+		return new \WP_Error( 'error', __( 'Something went wrong, unable to deactivate your license', 'paytium' ) );
 
 	}
 
@@ -221,7 +221,7 @@ class EDD implements ClientInterface {
 		}
 
 		if ( ! $body = json_decode( $response['body'] ) ) {
-			return new \WP_Error( 'empty', __( 'Empty body response' ) );
+			return new \WP_Error( 'empty', __( 'Empty body response', 'paytium' ) );
 		}
 
 		// License status
@@ -306,7 +306,7 @@ class EDD implements ClientInterface {
 		}
 
 		if ( ! $body = json_decode( $response['body'] ) ) {
-			return new \WP_Error( 'empty', __( 'Empty body response' ) );
+			return new \WP_Error( 'empty', __( 'Empty body response', 'paytium' ) );
 		}
 
 		set_transient( $transient_key, $body, ( HOUR_IN_SECONDS * 12 ) ); // Cache for 12 hours

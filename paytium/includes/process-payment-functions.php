@@ -24,6 +24,13 @@ function pt_process_payment() {
 	// At this point the data is not yet registered by Paytium
 //	var_dump_p($_POST);die;
 	//exit();
+	if ( $_SERVER['REQUEST_METHOD'] !== 'POST' || wp_doing_ajax() ) {
+		return;
+	}
+
+	if ( ! isset( $_POST['paytium_form_nonce'] ) || ! wp_verify_nonce( $_POST['paytium_form_nonce'], 'paytium_form_nonce_'.$_POST['pt-form-id'] ) ) {
+		wp_die( __( 'Invalid request. Please try again.', 'text-domain' ) );
+	}
 
 	// Create an array with all details of the payment in Paytium (not Mollie, that comes later)
 	$paytium_payment = array ();
@@ -1020,7 +1027,7 @@ function pt_get_mollie_customer_data_from_meta( $meta ) {
 	foreach ( $meta as $key => $value ) {
 
 		// Skip all labels
-		if ( strpos( $key, '-label' ) !== false ) {
+		if (strpos( $key, '-label') !== false  || strpos($key, '-user-data') !== false) {
 			continue;
 		}
 

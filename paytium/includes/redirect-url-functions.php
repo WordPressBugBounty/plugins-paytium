@@ -28,7 +28,7 @@ function pt_show_payment_details( $content ) {
 		$payment_id = sanitize_key( $_GET['pt-payment'] );
 		$payment    = pt_get_payment_by_payment_key( $payment_id );
 
-		$pretty_status = __( $payment->get_status() );
+		$pretty_status = __( $payment->get_status(), 'paytium' );
 
 		paytium_logger( print_r( $payment->id, true ) . ' - ' . 'Shown after payment message.',__FILE__,__LINE__ );
 

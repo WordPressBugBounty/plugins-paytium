@@ -1521,22 +1521,26 @@
 
             ptForm.find("[id^=pt-paytium-links]").each(function () {
 
+                // Helper function to sanitize input
+                function sanitizeInput(input) {
+                    return input.replace(/[^\w\s.-|]/gi, ''); // Allows alphanumeric, space, dash, dot, and pipe ("|")
+                }
+
                 // Create an object with all data
                 function getSearchParameters() {
                     var prmstr = window.location.search.substr(1);
                     prmstr = decodeURIComponent(prmstr);
-                    return prmstr != null && prmstr != "" ? transformToAssocArray(prmstr) : {};
+                    return prmstr !== null && prmstr !== "" ? transformToAssocArray(prmstr) : {};
                 }
 
                 function transformToAssocArray(prmstr) {
-                    if (prmstr.indexOf('%20') != -1) {
-                        prmstr = decodeURIComponent(prmstr);
-                    }
                     var params = {};
                     var prmarr = prmstr.split("&");
                     for (var i = 0; i < prmarr.length; i++) {
                         var tmparr = prmarr[i].split("=");
-                        params[tmparr[0]] = tmparr[1];
+                        var key = sanitizeInput(tmparr[0]);   // Sanitize keys
+                        var value = sanitizeInput(tmparr[1]); // Sanitize values
+                        params[key] = value;
                     }
                     return params;
                 }
@@ -1544,36 +1548,47 @@
                 var params = getSearchParameters();
 
                 $.each(params, function (key, valueObj) {
-
-                    $(ptForm.find("[id^=pt-field-]")).each(function (index, element) {
-
-                        // Get the user defined field label
+                    // Process each param and update the form
+                    ptForm.find("[id^=pt-field-]").each(function (index, element) {
                         var ptUserLabel = document.getElementById(this.id).getAttribute('data-pt-user-label');
-
-
-                        if (ptUserLabel == key) {
-                            $(element).val(valueObj);
+                        if (ptUserLabel == key && !$(element).hasClass('pt-field-checkbox')) {
+                            $(element).val(sanitizeInput(valueObj));
                         }
-
                     });
 
-                    if (ptForm.find('#pt-paytium-pro').length && ptForm.find('.pt-quantity-input').length && key.toLowerCase() == 'quantity') {
-                        ptForm.find('.pt-quantity-input').val(valueObj);
+                    if (ptForm.find('#pt-paytium-pro').length) {
+                        ptForm.find(".pt-checkbox-group, .pt-radio-group").each(function (index, element) {
+                            let selector = $(element),
+                                ptUserLabel = selector.data('pt-user-label');
+                            if (ptUserLabel == key) {
+                                let choices = valueObj.split('|');
+                                $(choices).each(function () {
+                                    $(selector).find('label[title="' + sanitizeInput(this) + '"]').click();
+                                });
+                            }
+                        });
+                    }
+
+                    if (key === 'subscription_option') {
+                        ptForm.find('.pt-radio-group.pt-subscription-interval-options label[title="'+sanitizeInput(valueObj)+'"]').click();
+                    }
+
+                    if (key.toLowerCase() == 'quantity') {
+                        ptForm.find('.pt-quantity-input').val(sanitizeInput(valueObj));
                     }
 
                     if (key.toLowerCase() == 'bedrag' || key.toLowerCase() == 'amount') {
-                        ptForm.find("[name*='pt-amount']").val(valueObj);
-                        ptForm.find('.pt-uea-custom-amount').val(valueObj);
+                        var sanitizedValue = sanitizeInput(valueObj);
+                        ptForm.find("[name*='pt-amount']").val(sanitizedValue);
+                        ptForm.find('.pt-uea-custom-amount').val(sanitizedValue);
 
-                        ptForm.find('.pt-uea-custom-amount-formatted').val(parseAmount(valueObj)).attr('data-pt-price', parseAmount(valueObj));
-
-                        ptForm.find("[name*='pt-amount']").attr('data-pt-price', parseAmount(valueObj));
-                        ptForm.find('.pt-uea-custom-amount').attr('data-pt-price', parseAmount(valueObj));
-
-                        update_totals();
+                        ptForm.find('.pt-uea-custom-amount-formatted').val(parseAmount(sanitizedValue)).attr('data-pt-price', parseAmount(sanitizedValue));
+                        ptForm.find("[name*='pt-amount']").attr('data-pt-price', parseAmount(sanitizedValue));
+                        ptForm.find('.pt-uea-custom-amount').attr('data-pt-price', parseAmount(sanitizedValue));
                     }
-
                 });
+
+                update_totals();
 
                 ptForm.find("[id^=pt-paytium-links-auto-redirect]").each(function () {
                     ptForm.find('.pt-payment-btn').click(submitFormProcessing());

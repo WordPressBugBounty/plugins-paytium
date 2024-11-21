@@ -101,7 +101,7 @@ function pt_register_settings() {
 			array (
 				'id'   => 'paytium_api_key_note',
 				'name' => '',
-				'desc' => sprintf( '%s <a href="%s" target="_blank">%s</a> %s', __('The test mode can be used when you are building and testing your payment form(s). When you are ready, switch to live mode to start accepting real payments. ', 'paytium'), 'https://my.mollie.com/dashboard/signup/335035', __( 'Login at Mollie to find your API keys', 'paytium' ), __( ' if the below fields are empty or use the Setup Wizard.') ),
+				'desc' => sprintf( '%s <a href="%s" target="_blank">%s</a> %s', __('The test mode can be used when you are building and testing your payment form(s). When you are ready, switch to live mode to start accepting real payments. ', 'paytium'), 'https://my.mollie.com/dashboard/signup/335035', __( 'Login at Mollie to find your API keys', 'paytium' ), __( ' if the below fields are empty or use the Setup Wizard.', 'paytium') ),
 				'type' => 'section'
 			),
 			array (

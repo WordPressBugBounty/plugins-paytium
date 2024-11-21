@@ -328,6 +328,7 @@ class Paytium {
 			'thousands_separator' => apply_filters( 'paytium_thousands_separator', '.' ),
 			'decimal_separator' => apply_filters( 'paytium_decimal_separator', ',' ),
 			'debug'           => ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ),
+            'version'         => PT_PACKAGE
 		) );
 
 	}

@@ -303,7 +303,7 @@ function paytium_add_user_role($role) {
 	if (!wp_roles()->is_role( $role )) {
 		add_role(
 			$role,
-			ucfirst(__( $role  )),
+			ucfirst($role),
 			array(
 				'read'  => true,
 			)
