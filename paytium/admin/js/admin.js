@@ -206,15 +206,15 @@
 
         let loading = false;
 
-        $("body.post-type-paytium_emails .column-status").on("click", function (e) {
+        $("body.post-type-paytium_emails .column-status, body.post-type-paytium_emails .column-included").on("click", function (e) {
 
-            if (loading == false) {
-                console.log(loading);
+            if (loading === false) {
                 loading = true;
                 let target = $(this).children('span'),
                     data = {
                         action: 'pt_email_status_change',
                         nonce: paytium.nonce,
+                        column: $(this).hasClass('column-status') ? 'status' : 'included',
                         email_id: target.data('id'),
                         email_status: target.data('status')
                     };

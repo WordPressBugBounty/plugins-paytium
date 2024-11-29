@@ -184,7 +184,9 @@ function pt_paytium_shortcode( $attr, $content = null ) {
 	// Add Parsley JS form validation attribute here.
 	$html .= '<form method="POST" action="" class="pt-checkout-form" id="' . esc_attr( $form_id ) . '" data-pt-id="' . $pt_id . '" data-parsley-validate enctype="multipart/form-data" data-currency="'.$currency.'">';
 
-	$html .= wp_nonce_field('paytium_form_nonce_'.$pt_id, 'paytium_form_nonce');
+	if (!is_admin() && !defined('REST_REQUEST')) {
+		$html .= wp_nonce_field('paytium_form_nonce_'.$pt_id, 'paytium_form_nonce');
+	}
 
 	// Check if key's are entered at all, otherwise throw error message
 	if ( empty( $mollie_api_key ) && current_user_can( 'manage_options' ) ) {
@@ -2127,6 +2129,7 @@ function pt_subscription( $attr ) {
 			// Collect all amounts so we can store them later for server side validation
 			pt_paytium_collect_amounts( $interval_amounts[ $amounts_counter ] );
 
+			$option_amount = !empty($interval_amounts[0]) ? ' - '. ($currency_symbol_after ? $interval_amounts[$amounts_counter] . ' ' . $currency : $currency . ' ' . $interval_amounts[$amounts_counter]) : '';
 
 			// Convert interval options to nicer "human friendly" versions, e.g. 1 month becomes Monthly
 			if ( ( $option == 'once' || $option == 'eenmalig' ) ) {
@@ -2144,7 +2147,7 @@ function pt_subscription( $attr ) {
 			$option_html .= '<input type="radio" name="pt-subscription-interval-options" value="' . $value . '" data-pt-label="' . $option . '" data-pt-price="' . pt_user_amount_to_float( $interval_amounts[ $amounts_counter ] ) . '"' . checked( $interval, $option, false ) .
 			                ' class="pt-subscription-interval-options" data-parsley-errors-container=".pt-form-group" required>';
 
-			$option_html .= '<span>' . esc_attr( $option ) . ' - '. ($currency_symbol_after ? $interval_amounts[$amounts_counter] . ' ' . $currency : $currency . ' ' . $interval_amounts[$amounts_counter]). '</span>';
+			$option_html .= '<span>' . esc_attr( $option ) . $option_amount . '</span>';
 			$option_html .= '</label>';
 
 			$amounts_counter ++;

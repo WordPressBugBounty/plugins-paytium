@@ -67,7 +67,6 @@
                             { label: 'Subscription/recurring payment', value: 8 },
                         ],
                         onChange: function onChange(text) {
-                            console.log(text);
                             switch (parseInt(text)) {
                                 case 1:
                                     shortcode = '[paytium name="Form name" description="Payment description"]' +
@@ -164,7 +163,6 @@
                         value: attributes.text,
                         placeholder: __('Write shortcode here…'),
                         onChange: function onChange(text) {
-                            console.log(text);
                             return setAttributes({
                                 text: text
                             });

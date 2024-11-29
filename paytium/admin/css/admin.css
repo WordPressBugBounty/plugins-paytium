@@ -710,7 +710,8 @@
 /**************************************************************
  * Payments > Emails
  *************************************************************/
-body.post-type-paytium_emails .column-status {
+body.post-type-paytium_emails .column-status,
+body.post-type-paytium_emails .column-included {
     cursor: pointer;
 }
 body.post-type-paytium_emails .metabox-email-trigger-title {

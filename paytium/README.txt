@@ -1,8 +1,8 @@
 === Paytium: Mollie payment forms & donations ===
 Contributors: davdebcom
 Requires at least: 6.2
-Tested up to: 6.7
-Stable tag: 4.4.12
+Tested up to: 6.7.1
+Stable tag: 4.4.13
 Requires PHP: 7.4
 Tags: ideal, mollie, payments, donation, credit card, payment, wordpress payments, payment form, wordpress donation plugin, mollie donations, doneren met mollie, mollie forms
 License: GPLv2 or later
@@ -165,6 +165,19 @@ Yes, you can! You can use the free plugin Say What, or consider using the commer
 6. **Review all payments and their status** - Check the status of all payments directly in the WordPress admin. Use the built-in "Order Status" to keep track of your own processing directly in WordPress.
 
 == Changelog ==
+
+= 4.4.13 – November 29, 2024 =
+### All Paytium versions
+FIX:
+* Show currency symbol only if interval_amounts not empty
+* Update Gutenberg editor when saving forms
+### Plus, Pro, Premium
+NEW
+* Automatic Emails - New option in Email template > not to send emails unless it has has
+been included in the form code & added column in email template list to show option is
+enabled or not with possibility to adapt
+FIX
+* Allow comma in paytium_links query
 
 = 4.4.12 – November 21(A14HB), 2024 =
 ### All Paytium versions
