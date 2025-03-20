@@ -1523,7 +1523,7 @@
 
                 // Helper function to sanitize input
                 function sanitizeInput(input) {
-                    return input.replace(/[^\w\s,-|]/gi, ''); // Allows alphanumeric, space, dash, dot, and pipe ("|")
+                    return input ? input.replace(/[^\w\s,-|]/gi, '') : ' '; // Allows alphanumeric, space, dash, dot, and pipe ("|")
                 }
 
                 // Create an object with all data

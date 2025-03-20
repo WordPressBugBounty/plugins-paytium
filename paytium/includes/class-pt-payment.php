@@ -857,11 +857,17 @@ class PT_Payment {
 		require ( PT_PATH . 'admin/views/meta-boxes/payment-items.php' );
 		$items_table = ob_get_clean();
 
+		ob_start();
+		$payment = $this;
+		require ( PT_PATH . 'admin/views/meta-boxes/payment-items-extended.php' );
+		$items_table_extended = ob_get_clean();
+
 		$items_table = apply_filters( 'paytium_items_table_emails_invoices', $items_table );
+		$items_table_extended = apply_filters( 'paytium_items_extended_table_emails_invoices', $items_table_extended );
 
 		$payment_data = array(
 			'items-table' => array( $items_table ),
-			'extended-items-table' => array( $items_table ),
+			'extended-items-table' => array( $items_table_extended ),
 			'total' => array( pt_float_amount_to_currency( $this->get_total(), $this->currency ) ),
 			'total-excl-tax' => array( pt_float_amount_to_currency( $this->get_total() - $this->get_tax_total(), $this->currency ) ),
 			'tax-total' => array( pt_float_amount_to_currency( $this->get_tax_total(), $this->currency ) ),
