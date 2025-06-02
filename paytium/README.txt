@@ -1,8 +1,8 @@
 === Paytium: Mollie payment forms & donations ===
 Contributors: davdebcom
 Requires at least: 6.2
-Tested up to: 6.7.2
-Stable tag: 4.4.15
+Tested up to: 6.8
+Stable tag: 4.4.16
 Requires PHP: 7.4
 Tags: ideal, mollie, payments, donation, credit card, payment, wordpress payments, payment form, wordpress donation plugin, mollie donations, doneren met mollie, mollie forms
 License: GPLv2 or later
@@ -166,9 +166,13 @@ Yes, you can! You can use the free plugin Say What, or consider using the commer
 
 == Changelog ==
 
+= 4.4.16 – June 2, 2025 =
+### All Paytium versions
+NEW: Mollie API update 5
+
 = 4.4.15 – March 20, 2025 =
 ### All Paytium versions
-NEW: Mollie API update 3
+NEW: Mollie API update 4
 * Tested up to WP 6.7.2
 * Tested up to PHP 8.4
 ### Plus, Pro, Premium

@@ -16,7 +16,7 @@
  * Plugin Name: Paytium
  * Plugin URI: https://www.paytium.nl
  * Description: Paytium, making payments in WordPress even more awesome!
- * Version: 4.4.15
+ * Version: 4.4.16
  * Author: David de Boer
  * Author URI: https://www.paytium.nl
  * License: GPL-2.0+
@@ -53,7 +53,7 @@ if ( class_exists( 'Paytium' ) ) {
 	}
 
 	if ( ! defined( 'PT_VERSION' ) ) {
-		define( 'PT_VERSION', '4.4.15' );
+		define( 'PT_VERSION', '4.4.16' );
 	}
 
 	if ( ! defined( 'PT_NAME' ) ) {
