@@ -1,8 +1,8 @@
 === Paytium: Mollie payment forms & donations ===
 Contributors: davdebcom
 Requires at least: 6.2
-Tested up to: 6.8
-Stable tag: 4.4.16
+Tested up to: 6.9
+Stable tag: 5.0.1
 Requires PHP: 7.4
 Tags: ideal, mollie, payments, donation, credit card, payment, wordpress payments, payment form, wordpress donation plugin, mollie donations, doneren met mollie, mollie forms
 License: GPLv2 or later
@@ -165,6 +165,26 @@ Yes, you can! You can use the free plugin Say What, or consider using the commer
 6. **Review all payments and their status** - Check the status of all payments directly in the WordPress admin. Use the built-in "Order Status" to keep track of your own processing directly in WordPress.
 
 == Changelog ==
+
+= 5.0.1 – January 14, 2026 =
+### All Paytium versions
+NEW : Mollie V3 library API update target function fix
+* Tested with the latest version WP 6.9
+* Tested & compatible Mollie Library version V3 3.6.0
+* Tested & compatible PHP 8.2 <> PHP 8.4
+
+= 5.0.0 – December 16, 2025 =
+### All Paytium versions
+NEW: Mollie V3 library API update
+* Tested with the latest version WP 6.9
+* Tested & compatible up to Mollie Library version V3 3.6.0
+* Tested & compatible up to PHP 8.4
+* Tested up to Elementor version 3.33.0
+* Ultimate Member tested for creating user profile in WP using Paytium user meta fields
+* Mollie compatibility check notification added to Paytium, if multiple Mollie versions are detected.
+### Plus, Pro, Premium
+* Tested MailPoet up to version 5.17
+* FIX : MailChimp integration updated
 
 = 4.4.16 – June 2, 2025 =
 ### All Paytium versions

@@ -672,12 +672,35 @@ class Paytium {
 
 		$plugin_slug = $this->plugin_slug;
 
+        // Include notification functions
+		include_once( PT_PATH . 'includes/notification-functions.php' );
+
 		// TODO Check for curl -- function_exists( 'curl_version' )
 		// TODO Check for sites on localhost?
 		// TODO Check for PHP 5.3.3 (or whatever Mollie API currently requires).
 
-		if ( ! class_exists( 'MollieApiClient' ) ) {
-			require_once( PT_PATH . 'libraries/Mollie/vendor/autoload.php' );
+		if ( ! class_exists( '\Mollie\Api\MollieApiClient' ) ) {
+            require_once PT_PATH . 'libraries/Mollie/vendor/autoload.php';
+		}
+		else {
+			try {
+				$ref = new \ReflectionClass('\Mollie\Api\MollieApiClient');
+				$path = $ref->getFileName();
+
+				$notification_counter = get_option( 'paytium_notification_counter' ) ? (int) get_option( 'paytium_notification_counter' ) + 1 : 1;
+				$mollie_third_party_notification = array (
+					'id'      => $notification_counter,
+					'user_id' => '',
+					'status'  => 'open',
+					'slug'    => 'mollie_third_party',
+					'message' => '[PAYTIUM] Paytium has detected that the latest Paytium-Mollie version can not be loaded because of possible conflicts detected due to different/older Mollie API PHP versions loaded on your site (' . esc_html($path) . '). Please contact the plugin’s support team, and/or check which other plugin is providing that Mollie library and update it to a more recent version. Please review the Paytium Changelog for compatibility details. For assistance in this please contact support@paytium.nl'
+                );
+
+				paytium_add_notification( $notification_counter, $mollie_third_party_notification );
+
+			} catch ( \ReflectionException $e ) {
+				paytium_logger( $e->getMessage(), __FILE__, __LINE__ );
+			}
 		}
 
 		$pt_mollie = new \Mollie\Api\MollieApiClient();
@@ -700,7 +723,6 @@ class Paytium {
 		include_once( PT_PATH . 'includes/user-data-functions.php' );
 		include_once( PT_PATH . 'includes/item-limit-functions.php' );
 		include_once( PT_PATH . 'includes/log-functions.php' );
-		include_once( PT_PATH . 'includes/notification-functions.php' );
 
 		// Include classes
 		include_once( PT_PATH . 'includes/class-pt-item.php' );

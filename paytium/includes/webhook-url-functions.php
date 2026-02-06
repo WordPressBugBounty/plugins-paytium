@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function pt_payment_update_webhook( $request ) {
 
-	if ( isset( $_GET['pt-webhook'] ) ) {
+	if ( isset( $_GET['pt-webhook'] ) && $_GET['pt-webhook'] !== 'stripe' ) {
 
 		global $pt_mollie;
 
@@ -289,7 +289,8 @@ function pt_payment_update_webhook( $request ) {
 						// Otherwise they don't get a subscription at all.
 						// Paytium does not accept pending mandates or subscriptions.
 						if ( $valid_mandate == false ) {
-							throw new Mollie\Api\Exceptions\ApiException ( 'Mandate was invalid, subscription not created.' );
+							paytium_logger('Mandate was invalid, subscription not created.', __FILE__, __LINE__);
+							pt_set_http_response_code_and_exit( '200' );
 						}
 
 						paytium_logger( $mollie->id . ' - ' . 'Webhook: subscription processing: valid mandate: ' . $valid_mandate . ', interval: ' .
@@ -384,7 +385,7 @@ function pt_payment_update_webhook( $request ) {
 						if ( $status == 'cancelled' || $status == 'expired' || $status == 'failed' ) {
 							paytium_logger( $mollie->id . '/' . $mollie->subscriptionId . ' - ' . 'Webhook: First payment not paid for (' .
 								$mollie->subscriptionId . '), didn\'t create a subscription.',__FILE__,__LINE__ );
-							throw new Mollie\Api\Exceptions\ApiException ( 'First payment not paid, didn\'t create a subscription.' );
+							pt_set_http_response_code_and_exit( '200' );
 						}
 					}
 
@@ -445,22 +446,44 @@ function pt_does_customer_have_valid_mandate( $customer_id ) {
 
 	global $pt_mollie;
 
-	$mandates = (array) $pt_mollie->mandates->listForId( $customer_id );
-
-	$valid_mandate = false;
-
-	foreach ( $mandates as $key => $mandate ) {
-
-		if ( $mandate->status == 'valid' || $mandate->status == 'pending' ) {
-			$valid_mandate = true;
-			break;
-
-		} else {
-			$valid_mandate = false;
-		}
+	if ( ! $customer_id ) {
+		paytium_logger('Mandate: missing customer_id', __FILE__, __LINE__);
+		return false;
 	}
 
-	return $valid_mandate;
+	try {
+
+		$mandates_collection = $pt_mollie->mandates->iteratorForId( $customer_id );
+
+		$valid_mandate = false;
+		$count         = 0;
+
+		foreach ( $mandates_collection as $mandate ) {
+			$count++;
+
+			$status = isset( $mandate->status ) ? $mandate->status : '';
+			$method = isset( $mandate->method ) ? $mandate->method : '';
+
+			paytium_logger('Mandate: item #' . $count . ' status=' . $status . ' method=' . $method, __FILE__, __LINE__);
+
+			if ( $status === 'valid' || $status === 'pending' ) {
+				$valid_mandate = true;
+				break;
+			}
+		}
+
+		return $valid_mandate;
+
+	} catch ( \Mollie\Api\Exceptions\ApiException $e ) {
+
+		paytium_logger('Mandate: Mollie API error for customer_id=' . $customer_id . ' message=' . $e->getMessage(), __FILE__, __LINE__);
+		return false;
+
+	} catch ( \Exception $e ) {
+
+		paytium_logger('Mandate: general error for customer_id=' . $customer_id . ' message=' . $e->getMessage(), __FILE__, __LINE__);
+		return false;
+	}
 }
 
 /**
