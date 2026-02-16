@@ -2,7 +2,7 @@
 Contributors: davdebcom
 Requires at least: 6.2
 Tested up to: 6.9
-Stable tag: 5.0.1
+Stable tag: 5.0.2
 Requires PHP: 7.4
 Tags: ideal, mollie, payments, donation, credit card, payment, wordpress payments, payment form, wordpress donation plugin, mollie donations, doneren met mollie, mollie forms
 License: GPLv2 or later
@@ -165,6 +165,11 @@ Yes, you can! You can use the free plugin Say What, or consider using the commer
 6. **Review all payments and their status** - Check the status of all payments directly in the WordPress admin. Use the built-in "Order Status" to keep track of your own processing directly in WordPress.
 
 == Changelog ==
+
+= 5.0.2 – Februari 16, 2026 =
+### All Paytium versions
+- Update public.js workflow for dynamically loaded forms Elementor
+- iDEAL logo replaced to iDEAL|WERO
 
 = 5.0.1 – January 14, 2026 =
 ### All Paytium versions

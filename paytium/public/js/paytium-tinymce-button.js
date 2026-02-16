@@ -4,7 +4,7 @@
             title: 'Paytium shortcodes',
             type: 'menubutton',
             icon: 'icon paytium-shortcodes-icon',
-            image: url.replace('public/js', 'assets/ideal-2019.svg').replace(/([^:]\/)\/+/g, "$1"),
+            image: url.replace('public/js', 'assets/ideal-wero.svg').replace(/([^:]\/)\/+/g, "$1"),
             menu: [
                 {
                     text: 'Simple product or donation, static amount',

@@ -524,7 +524,7 @@ class Paytium {
 			'edit_posts',
 			$this->plugin_slug,
 			array ( $this, 'display_plugin_admin_page' ),
-			plugins_url( '/assets/ideal-2019.svg', __FILE__ )
+			plugins_url( '/assets/ideal-wero.svg', __FILE__ )
 		);
 
 		// Settings page
@@ -585,7 +585,7 @@ class Paytium {
 	function add_toolbar_link( $wp_admin_bar ) {
 
 		if ( current_user_can( 'manage_options' ) ) {
-			$icon = "<span class='pt-icon' style='background: url(\"" . plugins_url( '/assets/ideal-2019.svg', __FILE__ ) . "\") no-repeat center; background-size:  20px auto; margin-right: 5px;'> </span>";
+			$icon = "<span class='pt-icon' style='background: url(\"" . plugins_url( '/assets/ideal-wero.svg', __FILE__ ) . "\") no-repeat center; background-size:  20px auto; margin-right: 5px;'> </span>";
 			$args = array (
 				'id'    => 'paytium',
 				'title' => $icon . __( 'Payments', 'paytium' ),
