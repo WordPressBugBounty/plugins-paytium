@@ -1,8 +1,8 @@
 === Paytium: Mollie payment forms & donations ===
 Contributors: davdebcom
 Requires at least: 6.2
-Tested up to: 6.9
-Stable tag: 5.0.2
+Tested up to: 7.0
+Stable tag: 5.0.3
 Requires PHP: 7.4
 Tags: ideal, mollie, donation, credit card, wordpress payment forms
 License: GPLv2 or later
@@ -170,6 +170,23 @@ Plugin Say What could also be an option.
 6. **Review all payments and their status** - Check the status of all payments directly in the WordPress admin. Use the built-in "Order Status" to keep track of your own processing directly in WordPress.
 
 == Changelog ==
+
+= 5.0.3 – June 17, 2026 =
+### All Paytium versions
+* Tested & compatible with the latest version WP 7.0
+* Tested & compatible editors
+* Tested & compatible PHP 8.2 <> PHP 8.5
+NEW : Optional Cache attributes for [paytium_show] - to set cache duration - in no cache/
+no delay (real time data) or cache custom set in units seconds, minutes, hours or days.
+NEW : Updated Test mode payment status check after redirect
+FIX : Privilege Escalation via hidden role parameter vulnerability
+### Plus, Pro, Premium
+NEW : Paytium Mails Marketing functionalities tested & compatible with WP 7.0.
+FIX : ActiveCampaign lists display
+Note : WP WordPress can still be run on PHP 7.4+ and MySQL 5.5.5+, but these versions
+have reached their official lifespan and may expose your site to security vulnerabilities.
+Note : For the best performance, stability, and security, it is strongly recommended to set
+your hosting to PHP 8.2 or preferably higher.
 
 = 5.0.2 – Februari 16, 2026 =
 ### All Paytium versions

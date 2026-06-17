@@ -49,11 +49,11 @@ function pt_process_payment() {
 
 	// Check if pt-subscription-interval is set and not empty, then set subscription to 1
 	$paytium_payment['subscription']                              = ( isset( $_POST['pt-subscription-interval'] ) && ! empty( $_POST['pt-subscription-interval'] ) ? '1' : '0' );
-	$paytium_payment['subscription_interval']                     = ( isset( $_POST['pt-subscription-interval'] ) ? $_POST['pt-subscription-interval'] : '' );
+	$paytium_payment['subscription_interval']                     = ( isset( $_POST['pt-subscription-interval'] ) ? sanitize_text_field( wp_unslash( $_POST['pt-subscription-interval'] ) ) : '' );
 	$paytium_payment['subscription_times']                        = ( isset( $_POST['pt-subscription-times'] ) && (int) trim( $_POST['pt-subscription-times'] ) != 0 ? (int) trim( $_POST['pt-subscription-times'] ) : '' );
 	$paytium_payment['subscription_first_payment']                = ( isset( $_POST['pt-subscription-first-payment'] ) ? pt_user_amount_to_float( $_POST['pt-subscription-first-payment'] ) : '' );
 	$paytium_payment['subscription_first_payment_tax_percentage'] = ( isset( $_POST['pt-subscription-first-payment-tax-percentage'] ) ? pt_user_amount_to_float( $_POST['pt-subscription-first-payment-tax-percentage'] ) : '' );
-	$paytium_payment['subscription_first_payment_label']          = ( isset( $_POST['pt-subscription-first-payment-label'] ) ? $_POST['pt-subscription-first-payment-label'] : $paytium_payment['description'] );
+	$paytium_payment['subscription_first_payment_label']          = ( isset( $_POST['pt-subscription-first-payment-label'] ) ? sanitize_text_field( wp_unslash( $_POST['pt-subscription-first-payment-label'] ) ) : $paytium_payment['description'] );
 	$paytium_payment['subscription_recurring_payment']            = ( isset( $_POST['pt-subscription-recurring-payment'] ) ? pt_user_amount_to_float( $_POST['pt-subscription-recurring-payment'] ) : '' );
 
 	$zero_tax = 0;
@@ -694,7 +694,23 @@ function pt_add_all_field_data_to_meta_array( $meta ) {
 		}
 
         if ($key == 'pt-paytium-user-data') {
-            $meta['pt-user-role'] = $value;
+            $submitted_role = sanitize_text_field( wp_unslash( $value ) );
+            $submitted_sig  = isset( $_POST['pt-paytium-user-data-sig'] )
+                ? sanitize_text_field( wp_unslash( $_POST['pt-paytium-user-data-sig'] ) )
+                : '';
+            $expected_sig   = wp_hash( 'pt_user_role|' . $submitted_role );
+
+            if ( $submitted_sig !== '' && hash_equals( $expected_sig, $submitted_sig ) ) {
+                $meta['pt-user-role'] = $submitted_role;
+            } else {
+                // Tampered/missing signature: drop the role so the user is created with the
+                // site default_role only. Log for visibility (possible escalation attempt).
+                paytium_logger(
+                    'Rejected user-data role "' . $submitted_role . '": invalid or missing signature (possible privilege-escalation attempt).',
+                    __FILE__,
+                    __LINE__
+                );
+            }
         }
 
         if ($key == 'pt_items') {

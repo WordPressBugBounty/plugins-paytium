@@ -519,3 +519,32 @@ function pt_get_new_payment_status($mollie) {
 
 	return $status;
 }
+
+/**
+ * Fetch a payment's current status directly from Mollie.
+ *
+ * Closes the race where the customer returns to the site before the webhook
+ * arrives (common in Mollie test mode, occasional on live).
+ *
+ * @param PT_Payment $payment Local payment object.
+ * @return string|false       Paytium status string, or false on any failure.
+ */
+function pt_fetch_status_from_mollie( $payment ) {
+	global $pt_mollie;
+
+	if ( empty( $payment ) || empty( $payment->transaction_id ) || $payment->transaction_id === '-' ) {
+		return false;
+	}
+
+	try {
+		$mode = ( isset( $payment->mode ) && $payment->mode === 'test' ) ? 'test' : 'live';
+		pt_set_paytium_key( $mode );
+		$mollie = $pt_mollie->payments->get( $payment->transaction_id );
+		return pt_get_new_payment_status( $mollie );
+	} catch ( \Exception $e ) {
+		paytium_logger( $payment->id . '/' . $payment->transaction_id
+			. ' - pt_fetch_status_from_mollie failed: ' . $e->getMessage(),
+			__FILE__, __LINE__ );
+		return false;
+	}
+}

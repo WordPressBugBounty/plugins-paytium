@@ -24,6 +24,7 @@ function pt_paytium_show_shortcode( $attr, $content = null ) {
 		'amount'   => '',
 		'type'     => '',
 		'id'       => '',
+		'cache'    => '',
 	), $attr, 'paytium' ) );
 
 	$show_id  = sanitize_text_field( $id );
@@ -148,7 +149,10 @@ function pt_paytium_show_shortcode( $attr, $content = null ) {
 
 	}
 
-	set_transient( 'pt_show_' . hash( 'md5', $type . '_' . $amount . '_' . $show_id ), $html, 5 * HOUR_IN_SECONDS );
+	$cache_duration = pt_parse_cache_duration( $attr['cache'] ?? '5 hours' );
+	if ( $cache_duration > 0 ) {
+		set_transient( 'pt_show_' . hash( 'md5', $type . '_' . $amount . '_' . $show_id ), $html, $cache_duration );
+	}
 
 	$html .= do_shortcode( $content );
 
@@ -157,3 +161,57 @@ function pt_paytium_show_shortcode( $attr, $content = null ) {
 }
 
 add_shortcode( 'paytium_show', 'pt_paytium_show_shortcode' );
+
+/**
+ * Parse a human-readable cache duration string into seconds.
+ *
+ * Supports: "30 minutes", "1 hour", "2 hours", "1 day", "0", "false", "none"
+ * Returns 0 to disable caching, or seconds as integer.
+ */
+function pt_parse_cache_duration( string $input ): int {
+	$input = strtolower( trim( $input ) );
+
+	// Disable caching
+	if ( in_array( $input, [ '0', 'false', 'none', 'off', 'no' ], true ) ) {
+		return 0;
+	}
+
+	$units = [
+		'second'  => 1,
+		'seconds' => 1,
+		'sec'     => 1,
+		's'       => 1,
+		'minute'  => MINUTE_IN_SECONDS,
+		'minutes' => MINUTE_IN_SECONDS,
+		'min'     => MINUTE_IN_SECONDS,
+		'm'       => MINUTE_IN_SECONDS,
+		'hour'    => HOUR_IN_SECONDS,
+		'hours'   => HOUR_IN_SECONDS,
+		'hr'      => HOUR_IN_SECONDS,
+		'h'       => HOUR_IN_SECONDS,
+		'day'     => DAY_IN_SECONDS,
+		'days'    => DAY_IN_SECONDS,
+		'd'       => DAY_IN_SECONDS,
+		'week'    => WEEK_IN_SECONDS,
+		'weeks'   => WEEK_IN_SECONDS,
+		'w'       => WEEK_IN_SECONDS,
+	];
+
+	// Match "30 minutes", "1hour", "2 h", etc.
+	if ( preg_match( '/^(\d+)\s*([a-z]+)$/', $input, $matches ) ) {
+		$value = (int) $matches[1];
+		$unit  = $matches[2];
+
+		if ( isset( $units[ $unit ] ) ) {
+			return $value * $units[ $unit ];
+		}
+	}
+
+	// Plain integer — treat as seconds
+	if ( ctype_digit( $input ) ) {
+		return (int) $input;
+	}
+
+	// Unrecognized — fall back to plugin default
+	return 5 * HOUR_IN_SECONDS;
+}

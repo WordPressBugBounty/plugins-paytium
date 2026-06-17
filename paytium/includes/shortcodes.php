@@ -2569,7 +2569,7 @@ function pt_cf_label( $attr ) {
 	$class .= $general_limit_class;
 
 	$id = 'pt_items[' . absint( $counter ) . ']';
-	$html = ( ! empty( $attr['label'] ) ? '<label for="' . esc_attr( $id ) . '[value]"'. $multiplied_by_data .' class="'.$class.'">' . wp_kses_post( $attr['label'] ) . '</label>' : '' );
+	$html = ( ! empty( $attr['label'] ) ? '<label for="' . esc_attr( $id ) . '[value]"'. $multiplied_by_data .$class.'>' . wp_kses_post( $attr['label'] ) . '</label>' : '' );
 
 	if ( ! empty( $limit ) ) {
 		$items_left = $limit;
@@ -2684,7 +2684,7 @@ function pt_cf_label( $attr ) {
 	}
 
 	if ($zero_tax) {
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][add_zero_tax]" value="1" data-pt-user-label="Multiplied by" />';
+		$html .= '<input type="hidden" name="pt_items[' . $counter . '][add_zero_tax]" value="1" data-pt-user-label="Zero tax" />';
 	}
 
 	$counter++;
@@ -2887,7 +2887,12 @@ function pt_paytium_user_data($attr)
 
     Paytium_Shortcode_Tracker::add_new_shortcode('paytium_user_data_' . $counter, 'paytium_user_data', $attr, false);
 
-    $html = '<input type="hidden" id="pt-paytium-user-data" name="pt-paytium-user-data" class="pt-paytium-user-data" value="'.esc_attr($role).'" data-pt-field-type="pt-paytium-user-data" />';
+    // Sign the role with the site secret so the client cannot substitute a role of their choosing
+    // on submission (prevents privilege escalation via the hidden pt-paytium-user-data field).
+    $role_sig = wp_hash('pt_user_role|' . $role);
+
+    $html  = '<input type="hidden" id="pt-paytium-user-data" name="pt-paytium-user-data" class="pt-paytium-user-data" value="'.esc_attr($role).'" data-pt-field-type="pt-paytium-user-data" />';
+    $html .= '<input type="hidden" name="pt-paytium-user-data-sig" value="'.esc_attr($role_sig).'" />';
 
     $args = pt_get_args('', $attr, $counter);
 
