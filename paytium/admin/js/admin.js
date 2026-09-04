@@ -118,7 +118,7 @@
 
         let current_subscription_option = $('.subscription-option:checked').val();
 
-        $(".paytium-cancel-subscription").bind("click", function (e) {
+        $(".paytium-cancel-subscription").on("click", function (e) {
 
             $(this).prop('disabled', true);
             e.preventDefault();
@@ -159,7 +159,7 @@
 
         });
 
-        $("#paytium_subscription_update").bind("click", function (e) {
+        $("#paytium_subscription_update").on("click", function (e) {
 
             $(this).prop('disabled', true);
             e.preventDefault();
@@ -416,7 +416,8 @@
                     statuses: $('#paytium_order-statuses').val(),
                     columns: $('#paytium_columns').val(),
                     sources: $('#paytium-payment-sources').val(),
-                    action: 'paytium_export_payments'
+                    action: 'paytium_export_payments',
+                    nonce: paytium.nonce
                 };
 
                 $.post(ajaxurl, data, function (response) {

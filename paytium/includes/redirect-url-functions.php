@@ -28,9 +28,10 @@ function pt_show_payment_details( $content ) {
 		$payment_id = sanitize_key( $_GET['pt-payment'] );
 		$payment    = pt_get_payment_by_payment_key( $payment_id );
 
+		// phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
 		$pretty_status = __( $payment->get_status(), 'paytium' );
 
-		paytium_logger( print_r( $payment->id, true ) . ' - ' . 'Shown after payment message.',__FILE__,__LINE__ );
+		paytium_logger( $payment->id . ' - ' . 'Shown after payment message.',__FILE__,__LINE__ );
 
 		$payment_status_style = ( $payment->status == 'paid' || $payment->no_payment == true ) ? 'pt-payment-details-wrap' : 'pt-payment-details-wrap pt-payment-details-error';
 
@@ -47,6 +48,7 @@ function pt_show_payment_details( $content ) {
 		} elseif ( $payment->status == 'paid' ) {
 			$html .= __( 'Thank you for your order, the status is:', 'paytium' ) . ' <b>' . strtolower( $pretty_status ) . '</b>.' . "\n";
 		} elseif ( ( $payment->status == 'open' ) && ( $payment->no_payment == false ) ) {
+			/* translators: %1$s: opening HTML tag. */
 			$html .= sprintf( __( 'The payment is: %s, this status might still change.', 'paytium' ), '<b>' . strtolower( $pretty_status ) . '</b>' ) . "\n";
 		} else {
 			$html .= __( 'The payment status is:', 'paytium' ) . ' <b>' . strtolower( $pretty_status ) . '</b>.' . "\n";

@@ -65,7 +65,7 @@ function paytium_limit_data_processing( $payment_post_id ) {
         }
     }
 
-    paytium_logger(print_r($current_item_limits,true),__FILE__,__LINE__);
+    paytium_logger( wp_json_encode( $current_item_limits ), __FILE__, __LINE__ );
 
 
     if (empty($current_item_limits)) {
@@ -75,7 +75,7 @@ function paytium_limit_data_processing( $payment_post_id ) {
 
     if (get_option('paytium_item_limits')) {
 
-        $paytium_item_limits = unserialize(get_option('paytium_item_limits'));
+        $paytium_item_limits = pt_unserialize_to_array(get_option('paytium_item_limits'));
 
         foreach ($current_item_limits as $key => $value) {
             $paytium_item_limits[$key] = isset($paytium_item_limits[$key]) ? $paytium_item_limits[$key] + $value['quantity'] : $value['quantity'];
@@ -108,10 +108,17 @@ add_action( 'paytium_after_pt_payment_update_webhook', 'paytium_limit_data_proce
 
 function pt_ajax_check_item_limits() {
 
-	$limit_data = isset($_POST['data']) ? $_POST['data'] : '';
+	$pt_form_id = isset( $_POST['pt-form-id'] ) ? sanitize_text_field( wp_unslash( $_POST['pt-form-id'] ) ) : '';
+	$pt_nonce   = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+
+	if ( ! wp_verify_nonce( $pt_nonce, 'paytium_form_nonce_' . $pt_form_id ) ) {
+		wp_send_json( array( 'message' => '' ) );
+	}
+
+	$limit_data = isset($_POST['data']) ? map_deep( wp_unslash( $_POST['data'] ), 'sanitize_text_field' ) : '';
 	if (!$limit_data) return;
 
-	$paytium_item_limits = unserialize(get_option('paytium_item_limits'));
+	$paytium_item_limits = pt_unserialize_to_array(get_option('paytium_item_limits'));
 	$limit_exceeded = array();
 
 	if (is_array($limit_data)) {
@@ -122,7 +129,8 @@ function pt_ajax_check_item_limits() {
 
 			if ( ! empty( $paytium_item_limits[ $item_id_lowercase ] ) ) {
 				if ( (int) $paytium_item_limits[ $item_id_lowercase ] + $quantity > (int) $array['limit'] ) {
-					$array['items_left']        = (int) $array['limit'] - (int) $paytium_item_limits[ $item_id_lowercase ];
+					$items_left                = (int) $array['limit'] - (int) $paytium_item_limits[ $item_id_lowercase ];
+					$array['items_left']       = max( 0, min( $items_left, $quantity ) );
 					$limit_exceeded[esc_attr($item_id)] = $array;
 				}
 			}

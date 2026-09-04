@@ -15,8 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 include_once( 'admin-helper-functions.php' );
 
-$active_tab = isset( $_GET['tab'] ) ? $_GET['tab'] : 'keys';
-$active_subtab = isset( $_GET['subtab'] ) ? $_GET['subtab'] : '';
+$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'keys';
+$active_subtab = isset( $_GET['subtab'] ) ? sanitize_key( wp_unslash( $_GET['subtab'] ) ) : '';
 ?>
 
 <div class="wrap">
@@ -46,13 +46,13 @@ $active_subtab = isset( $_GET['subtab'] ) ? $_GET['subtab'] : '';
 
                         <a href="<?php echo esc_url( add_query_arg( array('tab'=> $key, 'subtab' => $start_tab), remove_query_arg( 'settings-updated' ) ) ); ?>"
                            class="nav-tab marketing-tab
-							<?php echo $active_tab == $key ? 'nav-tab-active' : ''; ?>"><?php echo $value; ?></a>
+							<?php echo $active_tab == $key ? 'nav-tab-active' : ''; ?>"><?php echo esc_attr( $value ); ?></a>
                         <?php
                     }
                     else { ?>
                         <a href="<?php echo esc_url( add_query_arg( 'tab', $key, remove_query_arg( array('settings-updated', 'subtab') ) ) ); ?>"
                            class="nav-tab
-							<?php echo $active_tab == $key ? 'nav-tab-active' : ''; ?>"><?php echo $value; ?></a>
+							<?php echo $active_tab == $key ? 'nav-tab-active' : ''; ?>"><?php echo esc_attr( $value ); ?></a>
                         <?php
                     }
 				}
@@ -75,7 +75,7 @@ $active_subtab = isset( $_GET['subtab'] ) ? $_GET['subtab'] : '';
                                 foreach ($pt_marketing_subtabs as $mt_key => $mt_value) {
                                     ?>
                                     <a href="<?php echo esc_url(add_query_arg('subtab', $mt_key, remove_query_arg( 'settings-updated' ))); ?>"
-                                       class="<?php echo $active_subtab == $mt_key ? 'marketing-opt-active' : ''; ?>"><?php echo $mt_value; ?></a>
+                                       class="<?php echo $active_subtab == $mt_key ? 'marketing-opt-active' : ''; ?>"><?php echo esc_attr( $mt_value ); ?></a>
                                     <?php
 
                                     if ($i < count($pt_marketing_subtabs)) echo  ' | ';

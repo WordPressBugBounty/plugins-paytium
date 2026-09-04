@@ -23,10 +23,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 <div id="pt-admin-notice" class="updated">
 	<p>
-		<?php _e( 'Paytium is now installed.', 'paytium' ); ?>
+		<?php esc_html_e( 'Paytium is now installed.', 'paytium' ); ?>
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=pt-setup-wizard' ) ); ?>" class="button-primary"
-		   style="vertical-align: baseline;"><?php _e( 'Go through the setup wizard', 'paytium' ); ?></a>
+		   style="vertical-align: baseline;"><?php esc_html_e( 'Go through the setup wizard', 'paytium' ); ?></a>
 		<a href="<?php echo esc_url( add_query_arg( 'pt-dismiss-install-nag', 1 ) ); ?>"
-		   class="button-secondary"><?php _e( 'Hide this', 'paytium' ); ?></a>
+		   class="button-secondary"><?php esc_html_e( 'Hide this', 'paytium' ); ?></a>
 	</p>
 </div>

@@ -1,8 +1,14 @@
+<?php
+// Prevent direct file access; this file is only meaningful when loaded by WordPress.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+?>
 <div class="wrap">
 
-	<h1 style="margin-bottom: 10px;"><?php _e( 'Paytium setup wizard', 'paytium' ); ?></h1>
+	<h1 style="margin-bottom: 10px;"><?php esc_html_e( 'Paytium setup wizard', 'paytium' ); ?></h1>
 
-	<?php $current_step = isset( $_GET['step'] ) ? $_GET['step'] : 'connect-mollie'; ?>
+	<?php $current_step = isset( $_GET['step'] ) ? sanitize_key( wp_unslash( $_GET['step'] ) ) : 'connect-mollie'; ?>
 	<div id='pt-setup-wizard'>
 
 		<div class='tabs-panels-wrap'>
@@ -10,20 +16,20 @@
 				<ul>
 					<li class="<?php echo $current_step == 'connect-mollie' ? 'active' : ''; ?>">
 						<a href='javascript:void(0);'
-						   data-target='connect-mollie'><?php _e( '1. Mollie account', 'paytium' ); ?></a>
+						   data-target='connect-mollie'><?php esc_html_e( '1. Mollie account', 'paytium' ); ?></a>
 					</li>
 					<li class="<?php echo $current_step == 'create-profile' ? 'active' : ''; ?>">
 						<a href='javascript:void(0);'
-						   data-target='create-profile'><?php _e( '2. Website profile', 'paytium' ); ?></a>
+						   data-target='create-profile'><?php esc_html_e( '2. Website profile', 'paytium' ); ?></a>
 					</li>
 
 					<li class="<?php echo $current_step == 'payment-test' ? 'active' : ''; ?>">
 						<a href='javascript:void(0);'
-						   data-target='payment-test'><?php _e( '3. Test payment', 'paytium' ); ?></a>
+						   data-target='payment-test'><?php esc_html_e( '3. Test payment', 'paytium' ); ?></a>
 					</li>
 					<li class="<?php echo $current_step == 'first-product' ? 'active' : ''; ?>">
 						<a href='javascript:void(0);'
-						   data-target='first-product'><?php _e( '4. Payment form', 'paytium' ); ?></a>
+						   data-target='first-product'><?php esc_html_e( '4. Payment form', 'paytium' ); ?></a>
 					</li>
 				</ul>
 			</div>

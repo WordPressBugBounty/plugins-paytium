@@ -24,24 +24,28 @@ function pt_process_payment() {
 	// At this point the data is not yet registered by Paytium
 //	var_dump_p($_POST);die;
 	//exit();
-	if ( $_SERVER['REQUEST_METHOD'] !== 'POST' || wp_doing_ajax() ) {
+	if ( ( isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '' ) !== 'POST' || wp_doing_ajax() ) {
 		return;
 	}
 
-	if ( ! isset( $_POST['paytium_form_nonce'] ) || ! wp_verify_nonce( $_POST['paytium_form_nonce'], 'paytium_form_nonce_'.$_POST['pt-form-id'] ) ) {
-		wp_die( __( 'Invalid request. Please try again.', 'text-domain' ) );
+	// An absent form id simply fails the nonce check below, but read it safely so a
+	// malformed POST does not emit an "Undefined array key" warning first
+	$pt_form_id = ( isset( $_POST['pt-form-id'] ) ? sanitize_text_field( wp_unslash( $_POST['pt-form-id'] ) ) : '' );
+
+	if ( ! isset( $_POST['paytium_form_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['paytium_form_nonce'] ) ), 'paytium_form_nonce_'.$pt_form_id ) ) {
+		wp_die( esc_html__( 'Invalid request. Please try again.', 'paytium' ) );
 	}
 
 	// Create an array with all details of the payment in Paytium (not Mollie, that comes later)
 	$paytium_payment = array ();
 
 	// Get the details submitted by the form
-	$paytium_payment['description']           = wp_kses_post( $_POST['pt-description'] );
-	$paytium_payment['store_name']            = sanitize_text_field( $_POST['pt-name'] );
+	$paytium_payment['description']           = ( isset( $_POST['pt-description'] ) ? wp_kses_post( wp_unslash( $_POST['pt-description'] ) ) : '' );
+	$paytium_payment['store_name']            = ( isset( $_POST['pt-name'] ) ? sanitize_text_field( wp_unslash( $_POST['pt-name'] ) ) : '' );
 	$paytium_payment['pt_paytium_js_enabled'] = ( isset( $_POST['pt-paytium-js-enabled'] ) ? true : false );
 
 	// Get the form load id used for amount validation
-	$pt_form_load_id = ( isset( $_POST['pt-form-load'] ) ? sanitize_text_field($_POST['pt-form-load']) : '0');
+	$pt_form_load_id = ( isset( $_POST['pt-form-load'] ) ? sanitize_text_field(wp_unslash( $_POST['pt-form-load'] )) : '0');
 
 	// Save bought items
 	$item_meta = array ();
@@ -50,11 +54,11 @@ function pt_process_payment() {
 	// Check if pt-subscription-interval is set and not empty, then set subscription to 1
 	$paytium_payment['subscription']                              = ( isset( $_POST['pt-subscription-interval'] ) && ! empty( $_POST['pt-subscription-interval'] ) ? '1' : '0' );
 	$paytium_payment['subscription_interval']                     = ( isset( $_POST['pt-subscription-interval'] ) ? sanitize_text_field( wp_unslash( $_POST['pt-subscription-interval'] ) ) : '' );
-	$paytium_payment['subscription_times']                        = ( isset( $_POST['pt-subscription-times'] ) && (int) trim( $_POST['pt-subscription-times'] ) != 0 ? (int) trim( $_POST['pt-subscription-times'] ) : '' );
-	$paytium_payment['subscription_first_payment']                = ( isset( $_POST['pt-subscription-first-payment'] ) ? pt_user_amount_to_float( $_POST['pt-subscription-first-payment'] ) : '' );
-	$paytium_payment['subscription_first_payment_tax_percentage'] = ( isset( $_POST['pt-subscription-first-payment-tax-percentage'] ) ? pt_user_amount_to_float( $_POST['pt-subscription-first-payment-tax-percentage'] ) : '' );
+	$paytium_payment['subscription_times']                        = ( isset( $_POST['pt-subscription-times'] ) && (int) trim( sanitize_text_field( wp_unslash( $_POST['pt-subscription-times'] ) ) ) != 0 ? (int) trim( sanitize_text_field( wp_unslash( $_POST['pt-subscription-times'] ) ) ) : '' );
+	$paytium_payment['subscription_first_payment']                = ( isset( $_POST['pt-subscription-first-payment'] ) ? pt_user_amount_to_float( sanitize_text_field( wp_unslash( $_POST['pt-subscription-first-payment'] ) ) ) : '' );
+	$paytium_payment['subscription_first_payment_tax_percentage'] = ( isset( $_POST['pt-subscription-first-payment-tax-percentage'] ) ? pt_user_amount_to_float( sanitize_text_field( wp_unslash( $_POST['pt-subscription-first-payment-tax-percentage'] ) ) ) : '' );
 	$paytium_payment['subscription_first_payment_label']          = ( isset( $_POST['pt-subscription-first-payment-label'] ) ? sanitize_text_field( wp_unslash( $_POST['pt-subscription-first-payment-label'] ) ) : $paytium_payment['description'] );
-	$paytium_payment['subscription_recurring_payment']            = ( isset( $_POST['pt-subscription-recurring-payment'] ) ? pt_user_amount_to_float( $_POST['pt-subscription-recurring-payment'] ) : '' );
+	$paytium_payment['subscription_recurring_payment']            = ( isset( $_POST['pt-subscription-recurring-payment'] ) ? pt_user_amount_to_float( sanitize_text_field( wp_unslash( $_POST['pt-subscription-recurring-payment'] ) ) ) : '' );
 
 	$zero_tax = 0;
 
@@ -62,7 +66,8 @@ function pt_process_payment() {
 
 		if ( $paytium_payment['subscription_first_payment'] == '' ) {
 			$i = 0;
-			foreach ( $_POST['pt_items'] as $k => $item ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- pt_items is an ARRAY; sanitize_text_field() would return '' and silently zero the order total. Every field is sanitized individually inside the loop (absint/wp_kses_post/sanitize_key/(float)). Nonce is verified at the top of pt_process_payment().
+			foreach ( (array) wp_unslash( $_POST['pt_items'] ) as $k => $item ) {
 
 				$quantity = isset($item['multiplier_id']) ?
 					(isset($_POST['pt_form_field']['pt_cf_number_'.$k]) ? (float)$_POST['pt_form_field']['pt_cf_number_'.$k] : 0) :
@@ -107,7 +112,8 @@ function pt_process_payment() {
 
 			// Recurring payment item data
 			$i = 0;
-			foreach ( $_POST['pt_items'] as $k => $item ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- pt_items is an ARRAY; sanitize_text_field() would return '' and silently zero the order total. Every field is sanitized individually inside the loop (absint/wp_kses_post/sanitize_key/(float)). Nonce is verified at the top of pt_process_payment().
+			foreach ( (array) wp_unslash( $_POST['pt_items'] ) as $k => $item ) {
 
 				$tax_percentage = isset($item['tax_percentage']) ? absint( $item['tax_percentage'] ) : 0;
 				$amount = isset($item['amount']) ? $item['amount'] : 0;
@@ -126,20 +132,23 @@ function pt_process_payment() {
 
 	} else {
 		// For BC of custom integrations (EDD) with Paytium versions prior to 2.0
-		$total = $_POST['pt-amount'];
+		$total = ( isset( $_POST['pt-amount'] ) ? (float) str_replace( ',', '.', sanitize_text_field( wp_unslash( $_POST['pt-amount'] ) ) ) : 0 );
 	}
 
 	if (isset($_POST['pt-get-parameter']) && !empty($_POST['pt-get-parameter'])) {
 
-		$get_parameters = function_exists('pt_get_parameters') ? pt_get_parameters($_POST['pt-get-parameter']) : false;
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- pt-get-parameter is an ARRAY (the shortcode renders name="pt-get-parameter[<name>]"); sanitize_text_field() would return '' and nothing would be saved. pt_get_parameters() sanitizes both the key and the value.
+		$get_parameters = function_exists('pt_get_parameters') ? pt_get_parameters( (array) wp_unslash( $_POST['pt-get-parameter'] ) ) : false;
 	}
 
-	$source_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+	$source_host = isset($_SERVER['HTTP_HOST']) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+	$source_uri  = isset($_SERVER['REQUEST_URI']) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+	$source_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $source_host . $source_uri;
 	$source_id = url_to_postid($source_link);
 
 	$paytium_payment_sources = get_option('paytium_payment_sources');
 	if (is_serialized($paytium_payment_sources) || is_array($paytium_payment_sources)) {
-		$paytium_payment_sources = unserialize($paytium_payment_sources);
+		$paytium_payment_sources = pt_unserialize_to_array($paytium_payment_sources);
 		if (is_array($paytium_payment_sources) && !in_array($source_id, $paytium_payment_sources)) {
 			$paytium_payment_sources[] = $source_id;
 			update_option('paytium_payment_sources',serialize($paytium_payment_sources));
@@ -154,17 +163,19 @@ function pt_process_payment() {
 	if ( isset( $_POST['pt-discount']['code'] ) && ! empty( $_POST['pt-discount']['code'] ) ) {
 		$total_before_discount = $total - $zero_tax;
 
-		$discount_exclude_first_payment = isset($_POST['pt-discount-exclude-first-payment']) && $_POST['pt-discount-exclude-first-payment'] ? true : false;
+		$discount_exclude_first_payment = isset($_POST['pt-discount-exclude-first-payment']) && sanitize_text_field( wp_unslash( $_POST['pt-discount-exclude-first-payment'] ) ) ? true : false;
 
-		$total = pt_paytium_check_discount_code( $pt_form_load_id, $_POST['pt-discount'], $total_before_discount, $discount_exclude_first_payment );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- pt-discount is an ARRAY; sanitize_text_field() would return '' and every discount code would be rejected. pt_paytium_check_discount_code() sanitizes ['code'], ['type'], ['value'] and ['times'] itself, see :1038-1042.
+		$total = pt_paytium_check_discount_code( $pt_form_load_id, (array) wp_unslash( $_POST['pt-discount'] ), $total_before_discount, $discount_exclude_first_payment );
 
 		if ($paytium_payment['subscription_first_payment'] !== '') {
 			$paytium_payment['subscription_first_payment'] = $total;
 		}
 
-		$discount_type = $_POST['pt-discount']['type'];
-		$discount_initial_value = $_POST['pt-discount']['value'];
-		$discount_times_to_use = $_POST['pt-discount']['times'];
+		// Only ['code'] is guaranteed by the isset() above, so read the rest defensively
+		$discount_type = ( isset( $_POST['pt-discount']['type'] ) ? sanitize_key( $_POST['pt-discount']['type'] ) : '' );
+		$discount_initial_value = ( isset( $_POST['pt-discount']['value'] ) ? (float) $_POST['pt-discount']['value'] : 0 );
+		$discount_times_to_use = ( isset( $_POST['pt-discount']['times'] ) ? absint( $_POST['pt-discount']['times'] ) : 0 );
 
 		if ($discount_exclude_first_payment) {
 			$discount_amount = $discount_type == 'percentage' ?
@@ -178,26 +189,26 @@ function pt_process_payment() {
 		}
 
 		$discount_meta = array(
-			'discount_code' => $_POST['pt-discount']['code'],
+			'discount_code' => sanitize_text_field( wp_unslash( $_POST['pt-discount']['code'] ) ),
 			'discount_type' => $discount_type,
 			'discount_times' => $discount_times_to_use,
 			'discount_initial_value' => $discount_initial_value,
-			'discount_value' => $discount_type == 'percentage' ? $discount_initial_value.'%' : pt_float_amount_to_currency($discount_initial_value, $_POST['pt-currency']),
+			'discount_value' => $discount_type == 'percentage' ? $discount_initial_value.'%' : pt_float_amount_to_currency($discount_initial_value, isset( $_POST['pt-currency'] ) ? sanitize_text_field( wp_unslash( $_POST['pt-currency'] ) ) : ''),
 			'discount_amount' => $discount_amount,
-			'discount_associate_with_email' => isset($_POST['pt-discount-associate-with-email']) && $_POST['pt-discount-associate-with-email'] ? true : false,
-			'discount_first_payment' => isset($_POST['pt-discount-first-payment']) && $_POST['pt-discount-first-payment'] ? true : false,
-			'discount_exclude_first_payment' => isset($_POST['pt-discount-exclude-first-payment']) && $_POST['pt-discount-exclude-first-payment'] ? true : false,
+			'discount_associate_with_email' => isset($_POST['pt-discount-associate-with-email']) && sanitize_text_field( wp_unslash( $_POST['pt-discount-associate-with-email'] ) ) ? true : false,
+			'discount_first_payment' => isset($_POST['pt-discount-first-payment']) && sanitize_text_field( wp_unslash( $_POST['pt-discount-first-payment'] ) ) ? true : false,
+			'discount_exclude_first_payment' => isset($_POST['pt-discount-exclude-first-payment']) && sanitize_text_field( wp_unslash( $_POST['pt-discount-exclude-first-payment'] ) ) ? true : false,
 		);
 
 		$total = $total + $zero_tax;
 	}
-	elseif ((isset($_POST['pt-discount-checkbox']) && $discount_checkbox = $_POST['pt-discount-checkbox']) ||
-		(isset($_POST['pt-quantity-discount']) && $discount_quantity = $_POST['pt-quantity-discount']) ||
-		(isset($_POST['pt-amount-discount']) && $discount_amount = $_POST['pt-amount-discount'])) {
+	elseif ((isset($_POST['pt-discount-checkbox']) && $discount_checkbox = sanitize_text_field( wp_unslash( $_POST['pt-discount-checkbox'] ) )) ||
+		(isset($_POST['pt-quantity-discount']) && $discount_quantity = sanitize_text_field( wp_unslash( $_POST['pt-quantity-discount'] ) )) ||
+		(isset($_POST['pt-amount-discount']) && $discount_amount = sanitize_text_field( wp_unslash( $_POST['pt-amount-discount'] ) ))) {
 
-		$uid_key = $_POST['pt-discount-uid'];
+		$uid_key = isset( $_POST['pt-discount-uid'] ) ? sanitize_text_field( wp_unslash( $_POST['pt-discount-uid'] ) ) : '';
 		$uid = str_replace('pt_discount_uid_', '', $uid_key);
-		$pt_id = $_POST['pt-form-id'];
+		$pt_id = sanitize_text_field( wp_unslash( $_POST['pt-form-id'] ) );
 		if (isset($discount_checkbox) && get_transient($uid_key) == 'pt_discount_checkbox_'.$source_id.'_'.$pt_id.'_'. $uid) {
 			$key_prefix = 'pt_discount_checkbox_';
 		}
@@ -211,8 +222,8 @@ function pt_process_payment() {
 		if (get_transient($uid_key) == $key_prefix.$source_id.'_'.$pt_id.'_'.$uid) {
 
 			$total_before_discount = $total - $zero_tax;
-			$discount_type = $_POST['pt-discount']['type'];
-			$discount_value = $_POST['pt-discount']['value'];
+			$discount_type = sanitize_text_field( wp_unslash( $_POST['pt-discount']['type'] ) );
+			$discount_value = sanitize_text_field( wp_unslash( $_POST['pt-discount']['value'] ) );
 
 			$discount_data = get_transient($key_prefix.$source_id.'_'.$pt_id);
 			if (isset($discount_quantity) || isset($discount_amount)) {
@@ -240,7 +251,7 @@ function pt_process_payment() {
 
 				$discount_meta = array(
 					'discount_type' => $discount_type,
-					'discount_value' => $discount_type == 'percentage' ? $discount_value.'%' : pt_float_amount_to_currency($discount_value, $_POST['pt-currency']),
+					'discount_value' => $discount_type == 'percentage' ? $discount_value.'%' : pt_float_amount_to_currency($discount_value, isset( $_POST['pt-currency'] ) ? sanitize_text_field( wp_unslash( $_POST['pt-currency'] ) ) : ''),
 					'discount_amount' => $discount_amount,
 				);
 
@@ -248,13 +259,13 @@ function pt_process_payment() {
 			}
 			else {
 				// Redirect back to form if field validation fails
-				wp_redirect( esc_url( add_query_arg( 'pt-field-validation-failed', 1 ) ) );
+				wp_safe_redirect( add_query_arg( 'pt-field-validation-failed', 1 ) );
 				die;
 			}
 		}
 		else {
 			// Redirect back to form if field validation fails
-			wp_redirect( esc_url( add_query_arg( 'pt-field-validation-failed', 1 ) ) );
+			wp_safe_redirect( add_query_arg( 'pt-field-validation-failed', 1 ) );
 			die;
 		}
 	}
@@ -262,8 +273,8 @@ function pt_process_payment() {
 	// Add subscription options to database
 	if (isset( $_POST['pt-subscription-interval-options-list'] ) && isset( $_POST['pt-subscription-interval-amounts-list'] )) {
 
-		$interval_options = array_map('trim', explode( ',', $_POST['pt-subscription-interval-options-list'] ));
-		$interval_amounts = explode( '/', $_POST['pt-subscription-interval-amounts-list'] );
+		$interval_options = array_map('trim', explode( ',', sanitize_text_field( wp_unslash( $_POST['pt-subscription-interval-options-list'] ) ) ));
+		$interval_amounts = explode( '/', sanitize_text_field( wp_unslash( $_POST['pt-subscription-interval-amounts-list'] ) ) );
 
 		if (count($interval_options) == count($interval_amounts)) {
 			$combined_list = array_combine($interval_options, $interval_amounts);
@@ -281,19 +292,19 @@ function pt_process_payment() {
 				}
 			}
 			if ($combined_list) {
-				$paytium_payment['subscription_options_list'] = json_encode($combined_list);
+				$paytium_payment['subscription_options_list'] = wp_json_encode($combined_list);
 			}
 
 			if (isset($discount_meta)) {
 				$discounted_options_list = array();
-				$discount_val = $_POST['pt-discount']['value'];
+				$discount_val = sanitize_text_field( wp_unslash( $_POST['pt-discount']['value'] ) );
 				foreach ($combined_list as $key => $value) {
 					$discounted_options_list[$key] = $_POST['pt-discount']['type'] == 'percentage' ?
 						number_format($value * ((100 - $discount_val) / 100),2, '.','') :
 						number_format($value - $discount_val,2, '.','');
 				}
 				if ($discounted_options_list) {
-					$paytium_payment['subscription_options_list_discount'] = json_encode($discounted_options_list);
+					$paytium_payment['subscription_options_list_discount'] = wp_json_encode($discounted_options_list);
 				}
 			}
 
@@ -304,22 +315,22 @@ function pt_process_payment() {
 	$paytium_payment['amount'] = pt_user_amount_to_float( $total );
 
 	// Currency
-	$paytium_payment['currency'] = isset($_POST['pt-currency']) && $_POST['pt-currency'] ? $_POST['pt-currency'] : get_option('paytium_currency', 'EUR'); // currency feature
+	$paytium_payment['currency'] = isset($_POST['pt-currency']) && sanitize_text_field( wp_unslash( $_POST['pt-currency'] ) ) ? sanitize_text_field( wp_unslash( $_POST['pt-currency'] ) ) : get_option('paytium_currency', 'EUR'); // currency feature
 
 	// Create a subscription_start_date for Paytium, as first_amount for Paytium is the full subscription amount.
 	// Users can give a preference that needs to be calculated, otherwise use subscription_interval to set it.
 	if ( isset( $_POST['pt-subscription-start-date'] ) ) {
-		$custom_start_date = date( 'Y-m-d', strtotime( $_POST['pt-subscription-start-date'] ) );
-		$now               = date( 'Y-m-d' );
+		$custom_start_date = gmdate( 'Y-m-d', strtotime( sanitize_text_field( wp_unslash( $_POST['pt-subscription-start-date'] ) ) ) );
+		$now               = gmdate( 'Y-m-d' );
 
 		// Check if data is in the past, if so adjust year
-		if ( date( 'Y-m-d', strtotime( $_POST['pt-subscription-start-date'] ) ) < $now ) {
-			$custom_start_date = date( 'Y-m-d', strtotime( $_POST['pt-subscription-start-date'] . ' +1 year' ) );
+		if ( gmdate( 'Y-m-d', strtotime( sanitize_text_field( wp_unslash( $_POST['pt-subscription-start-date'] ) ) ) ) < $now ) {
+			$custom_start_date = gmdate( 'Y-m-d', strtotime( sanitize_text_field( wp_unslash( $_POST['pt-subscription-start-date'] ) ) . ' +1 year' ) );
 		}
 
 		$paytium_payment['subscription_start_date'] = $custom_start_date;
 	} else {
-		$paytium_payment['subscription_start_date'] = date( 'Y-m-d', strtotime( $paytium_payment['subscription_interval'] ) );
+		$paytium_payment['subscription_start_date'] = gmdate( 'Y-m-d', strtotime( $paytium_payment['subscription_interval'] ) );
 	}
 
 	// Check if pt-paytium-no-payment is set, if it is, this form doesn't require a payment
@@ -327,17 +338,17 @@ function pt_process_payment() {
 	$paytium_payment['no_payment_invoice'] = ( isset( $_POST['pt-paytium-no-payment-invoice'] ) ? true : false );
 
 	// Get current post/page URL and set as URL where customers will be redirected to after payment
-	$paytium_payment['pt_redirect_url'] = sanitize_text_field( isset( $_POST['pt_redirect_url'] ) ? $_POST['pt_redirect_url'] : home_url() );
+	$paytium_payment['pt_redirect_url'] = sanitize_text_field( isset( $_POST['pt_redirect_url'] ) ? wp_unslash( $_POST['pt_redirect_url'] ) : home_url() );
 
 	// Check for this param, without it JS did not process! Check needs to be outside of JS, for when JS is not enabled.
 	if ( $paytium_payment['pt_paytium_js_enabled'] == false && ! is_admin() ) {
-		wp_redirect( esc_url( add_query_arg( 'pt-js-validation-failed', 1 ) ) );
+		wp_safe_redirect( add_query_arg( 'pt-js-validation-failed', 1 ) );
 		die;
 	}
 
 	// Add validation for minimum data, now amount. Check needs to be outside of JS, for when JS is not enabled.
 	if ( (empty( $paytium_payment['amount'] ) || ($paytium_payment['amount'] <= 0.99 ))  && ( $paytium_payment['no_payment'] !== true ) ) {
-		wp_redirect( esc_url( add_query_arg( 'pt-amount-validation-failed', 1 ) ) );
+		wp_safe_redirect( add_query_arg( 'pt-amount-validation-failed', 1 ) );
 		die;
 	}
 
@@ -426,7 +437,7 @@ function pt_process_payment() {
 			}
 
 			if (isset($_POST['pt-no-emails'])) {
-				pt_update_payment_meta($paytium_payment['post_id'], array( 'pt_no_emails' => $_POST['pt-no-emails'] ));
+				pt_update_payment_meta($paytium_payment['post_id'], array( 'pt_no_emails' => sanitize_text_field( wp_unslash( $_POST['pt-no-emails'] ) ) ));
 			}
 
 			// Generate a secure payment key to use in the redirectURL
@@ -516,7 +527,8 @@ function pt_process_payment() {
 			// Add a filter here to allow developers to process payment as well
 			do_action( 'paytium_after_full_payment_saved', $paytium_payment['post_id'] );
 
-			// Redirect user to Mollie for payment or message for form submissions
+			// Redirect user to Mollie for payment or message for form submissions.
+			// phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- this deliberately leaves the site for Mollie's checkout; wp_safe_redirect() would block it.
 			wp_redirect( $redirect, '303' );
 			die;
 
@@ -532,11 +544,12 @@ function pt_process_payment() {
 			paytium_logger( $paytium_payment['post_id'] . ' - ' . 'Creating payment failed: ' . htmlspecialchars( $e->getMessage() ),__FILE__,__LINE__ );
 
 			if ( strpos( $e->getMessage(), 'No suitable payment methods found' ) !== false ) {
-				echo sprintf( __( 'Review %sthis FAQ%s to solve this problem. ', 'paytium' ), '<a href="https://www.paytium.nl/handleiding/veelgestelde-vragen/foutmelding-no-suitable-payment-methods-found/">', '</a>' );
+				/* translators: %1$s: opening link tag, %2$s: closing link tag. */
+				echo sprintf( esc_html__( 'Review %1$sthis FAQ%2$s to solve this problem. ', 'paytium' ), '<a href="https://www.paytium.nl/handleiding/veelgestelde-vragen/foutmelding-no-suitable-payment-methods-found/">', '</a>' );
 				echo '<br />';
 			}
 
-			echo( 'Creating payment failed: ' . htmlspecialchars( $e->getMessage() ) );
+			echo esc_html( 'Creating payment failed: ' . $e->getMessage() );
 		}
 
 		exit;
@@ -547,6 +560,7 @@ function pt_process_payment() {
 }
 
 // We only want to process the payment if form submitted
+// phpcs:ignore WordPress.Security.NonceVerification.Missing -- pt_process_payment() verifies the paytium_form_nonce at the top of this function before any of this runs.
 if ( isset( $_POST['pt-amount'] ) ) {
 	// Changed from init to wp_loaded to solve WooCommerce conflict - http://wordpress.stackexchange.com/a/67635
 	add_action( 'wp_loaded', 'pt_process_payment' );
@@ -666,6 +680,7 @@ function pt_paytium_no_api_key_payment_and_redirect( $paytium_payment ) {
 function pt_add_all_field_data_to_meta_array( $meta ) {
 
 	// Loop to get all fields and their labels
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- pt_process_payment() verifies the paytium_form_nonce at the top of this function before any of this runs.
 	foreach ( $_POST as $key => $value ) {
 
 		$is_field = strstr( $key, 'pt-field-' );
@@ -693,25 +708,8 @@ function pt_add_all_field_data_to_meta_array( $meta ) {
 			$meta[ $key ] = $value;
 		}
 
-        if ($key == 'pt-paytium-user-data') {
-            $submitted_role = sanitize_text_field( wp_unslash( $value ) );
-            $submitted_sig  = isset( $_POST['pt-paytium-user-data-sig'] )
-                ? sanitize_text_field( wp_unslash( $_POST['pt-paytium-user-data-sig'] ) )
-                : '';
-            $expected_sig   = wp_hash( 'pt_user_role|' . $submitted_role );
-
-            if ( $submitted_sig !== '' && hash_equals( $expected_sig, $submitted_sig ) ) {
-                $meta['pt-user-role'] = $submitted_role;
-            } else {
-                // Tampered/missing signature: drop the role so the user is created with the
-                // site default_role only. Log for visibility (possible escalation attempt).
-                paytium_logger(
-                    'Rejected user-data role "' . $submitted_role . '": invalid or missing signature (possible privilege-escalation attempt).',
-                    __FILE__,
-                    __LINE__
-                );
-            }
-        }
+        // The user role is deliberately not handled here, see pt_set_signed_user_role_meta()
+        // below: it runs last on pt_meta_values so no other filter can overwrite the role.
 
         if ($key == 'pt_items') {
             foreach ($value as $items_id => $post_data) {
@@ -769,6 +767,7 @@ function pt_add_all_field_data_to_meta_array( $meta ) {
         }
 	}
 
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- pt_process_payment() verifies the paytium_form_nonce at the top of this function before any of this runs.
 	if (isset($_FILES['pt-paytium-uploaded-file'])) {
 
 		require_once( ABSPATH . 'wp-admin/includes/image.php' );
@@ -776,7 +775,14 @@ function pt_add_all_field_data_to_meta_array( $meta ) {
 		require_once( ABSPATH . 'wp-admin/includes/media.php' );
 
 		$files_data = array();
-		$files = $_FILES["pt-paytium-uploaded-file"];
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Missing -- see above; $_FILES is not slashed by WordPress, media_handle_upload() performs the validation, and the form nonce is verified at the top of pt_process_payment().
+		$files = $_FILES['pt-paytium-uploaded-file'];
+
+		if ( ! isset( $files['name'] ) || ! is_array( $files['name'] ) ) {
+			$files['name'] = array();
+		}
+
 		foreach ( $files['name'] as $key => $value ) {
 			if ( $files['name'][ $key ] ) {
 				$file          = array(
@@ -805,6 +811,120 @@ function pt_add_all_field_data_to_meta_array( $meta ) {
 }
 
 add_filter( 'pt_meta_values', 'pt_add_all_field_data_to_meta_array' );
+
+
+/**
+ * Meta keys that Paytium derives privileges or payment state from.
+ *
+ * These may never originate from client input, no matter which filter tries to set them.
+ *
+ * @since 5.0.4
+ */
+function pt_reserved_meta_keys() {
+
+	return apply_filters( 'pt_reserved_meta_keys', array (
+		'pt-user-role',
+		'pt-user-role-sig',
+		'user-role',
+		'user_role',
+		'role',
+		'pt-paytium-user-data',
+		'pt-user-data',
+		'amount',
+		'currency',
+		'status',
+		'order_status',
+		'payment_id',
+		'payment_key',
+		'mode',
+		'payment_mode',
+		'post_author',
+	) );
+}
+
+
+/**
+ * Check whether a submitted meta key collides with a reserved (privileged) meta key.
+ *
+ * Keys are normalised first, so 'PT_User_Role', 'pt user role' and '_pt-user-role'
+ * all collapse onto the same token as 'pt-user-role'.
+ *
+ * @since 5.0.4
+ */
+function pt_is_reserved_meta_key( $key ) {
+
+	$normalised = pt_normalise_meta_key( $key );
+
+	if ( in_array( $normalised, array_map( 'pt_normalise_meta_key', pt_reserved_meta_keys() ), true ) ) {
+		return true;
+	}
+
+	// Catch anything else that still resolves to a role
+	return (bool) preg_match( '/(^|-)(user-)?role($|-)/', $normalised );
+}
+
+
+/**
+ * Normalise a meta key for reserved key comparison.
+ *
+ * @since 5.0.4
+ */
+function pt_normalise_meta_key( $key ) {
+
+	return trim( strtolower( preg_replace( '/[^a-z0-9]/i', '-', (string) $key ) ), '-' );
+}
+
+
+/**
+ * Set the user role meta, but only when it carries a valid signature.
+ *
+ * Runs last on pt_meta_values and clears the key first, so the role is decided
+ * here and only here. Without this, any other filter registered later on the same
+ * hook could overwrite the verified role with unsigned client input.
+ *
+ * @since 5.0.4
+ */
+function pt_set_signed_user_role_meta( $meta ) {
+
+	// The whole function runs inside pt_process_payment(), which verifies the
+	// paytium_form_nonce before reaching this filter, so the $_POST reads below
+	// are already CSRF-protected.
+	// phpcs:disable WordPress.Security.NonceVerification.Missing
+
+	// Whatever any earlier filter produced, the role is decided here and only here
+	unset( $meta['pt-user-role'], $meta['pt-user-role-sig'] );
+
+	if ( empty( $_POST['pt-paytium-user-data'] ) ) {
+		return $meta;
+	}
+
+	$submitted_role = sanitize_text_field( wp_unslash( $_POST['pt-paytium-user-data'] ) );
+	$submitted_sig  = isset( $_POST['pt-paytium-user-data-sig'] )
+		? sanitize_text_field( wp_unslash( $_POST['pt-paytium-user-data-sig'] ) )
+		: '';
+	$expected_sig   = wp_hash( 'pt_user_role|' . $submitted_role );
+
+	if ( $submitted_sig !== '' && hash_equals( $expected_sig, $submitted_sig ) ) {
+		$meta['pt-user-role'] = $submitted_role;
+
+		// Stored alongside the role and re-verified in paytium_user_data_processing(),
+		// so the role cannot be trusted on the strength of the meta key alone
+		$meta['pt-user-role-sig'] = $expected_sig;
+	} else {
+		// Tampered/missing signature: drop the role so the user is created with the
+		// site default_role only. Log for visibility (possible escalation attempt).
+		paytium_logger(
+			'Rejected user-data role "' . $submitted_role . '": invalid or missing signature (possible privilege-escalation attempt).',
+			__FILE__,
+			__LINE__
+		);
+	}
+
+	return $meta;
+	// phpcs:enable WordPress.Security.NonceVerification.Missing
+}
+
+add_filter( 'pt_meta_values', 'pt_set_signed_user_role_meta', PHP_INT_MAX );
 
 
 /**
@@ -874,7 +994,7 @@ function pt_paytium_validate_form_values( $form_load_id, $meta ) {
 		delete_transient( 'paytium_form_load_' . $form_load_id );
 
 		// Redirect back to form if field validation fails
-		wp_redirect( esc_url( add_query_arg( 'pt-field-validation-failed', 1 ) ) );
+		wp_safe_redirect( add_query_arg( 'pt-field-validation-failed', 1 ) );
 		die;
 	}
 
@@ -909,7 +1029,7 @@ function pt_paytium_validate_form_amounts( $form_load_id, $amount, $discount_amo
 			delete_transient( 'paytium_form_load_' . $form_load_id );
 
 			// Redirect back to form as $total is lower then lowest amount in the form
-			wp_redirect( esc_url( add_query_arg( 'pt-field-validation-failed', 1 ) ) );
+			wp_safe_redirect( add_query_arg( 'pt-field-validation-failed', 1 ) );
 			die;
 
 		}
@@ -976,7 +1096,7 @@ function pt_paytium_check_discount_code( $form_load_id, $discount, $total, $excl
 		delete_transient( 'paytium_form_load_' . $form_load_id );
 
 		// Redirect back to form if field validation fails
-		wp_redirect( esc_url( add_query_arg( 'pt-field-validation-failed', 1 ) ) );
+		wp_safe_redirect( add_query_arg( 'pt-field-validation-failed', 1 ) );
 		die;
 	}
 
@@ -1102,18 +1222,43 @@ function paytium_create_new_mollie_customer( $mollie_customer, $payment_id ) {
  */
 function pt_cf_checkout_meta( $meta ) {
 
-	if ( isset( $_POST['pt_form_field'] ) ) {
-		foreach ( $_POST['pt_form_field'] as $k => $v ) {
-			// Drop the default value for paytium_radio and paytium_dropdown
-			// I have a superior way to store key and value (see public.js)
-			if ( strstr( $k, 'pt_cf_' ) ) {
-				continue;
-			}
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- pt_process_payment() verifies the paytium_form_nonce at the top of this function before any of this runs.
+	if ( ! isset( $_POST['pt_form_field'] ) || ! is_array( $_POST['pt_form_field'] ) ) {
+		return $meta;
+	}
 
-			if ( ! empty( $v ) ) {
-				$meta[ $k ] = $v;
-			}
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- pt_form_field is an ARRAY (is_array() is checked immediately above); sanitize_text_field() would return '' and drop every custom field. Each value is sanitized at the bottom of this loop. Nonce is verified at the top of pt_process_payment().
+	foreach ( (array) wp_unslash( $_POST['pt_form_field'] ) as $k => $v ) {
+
+		// Drop the default value for paytium_radio and paytium_dropdown
+		// I have a superior way to store key and value (see public.js)
+		if ( strstr( $k, 'pt_cf_' ) ) {
+			continue;
 		}
+
+		// Legal keys here are author defined field ids only (see the id attribute on
+		// [paytium_number] and [paytium_checkbox]): letters, digits, - and _. Anything
+		// else cannot come from a Paytium form and is not copied into the payment meta.
+		if ( ! preg_match( '/^[A-Za-z0-9][A-Za-z0-9_-]*$/', $k ) ) {
+			continue;
+		}
+
+		// Never let client input land on a meta key Paytium treats as privileged
+		if ( pt_is_reserved_meta_key( $k ) ) {
+			paytium_logger(
+				'Rejected custom field "' . $k . '": reserved meta key (possible privilege-escalation attempt).',
+				__FILE__,
+				__LINE__
+			);
+			continue;
+		}
+
+		if ( empty( $v ) ) {
+			continue;
+		}
+
+		// Sanitize values, even when they are in an array
+		$meta[ $k ] = is_array( $v ) ? array_map( 'sanitize_text_field', $v ) : sanitize_text_field( $v );
 	}
 
 	return $meta;

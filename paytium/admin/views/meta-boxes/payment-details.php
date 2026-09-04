@@ -19,28 +19,28 @@ $my_profile_page = isset( $_GET['page'] ) && $_GET['page'] == 'pt-my-profile';
 
 <div class='option-group'>
 
-	<label for='payment-id'><?php _e( 'Payment ID', 'paytium' ); ?></label>
-	<span class="option-value"><?php echo $payment->id; ?></span>
+	<label for='payment-id'><?php esc_html_e( 'Payment ID', 'paytium' ); ?></label>
+	<span class="option-value"><?php echo esc_attr( $payment->id ); ?></span>
 
 </div>
 
 <div class='option-group'>
 
-	<label for='transaction-id'><?php _e( 'Transaction ID', 'paytium' ); ?></label>
-	<span class="option-value"><?php echo $payment->get_transaction_id(); ?></span>
+	<label for='transaction-id'><?php esc_html_e( 'Transaction ID', 'paytium' ); ?></label>
+	<span class="option-value"><?php echo esc_attr( $payment->get_transaction_id() ); ?></span>
 
 </div>
 
 <div class='option-group'>
 
-	<label for='payment-date'><?php _e( 'Payment time', 'paytium' ); ?></label>
-	<span class="option-value"><?php echo $payment->get_payment_date(); ?></span>
+	<label for='payment-date'><?php esc_html_e( 'Payment time', 'paytium' ); ?></label>
+	<span class="option-value"><?php echo esc_attr( $payment->get_payment_date() ); ?></span>
 
 </div>
 
 <div class='option-group'>
 
-	<label for='payment-status'><?php _e( 'Payment status', 'paytium' ); ?></label>
+	<label for='payment-status'><?php esc_html_e( 'Payment status', 'paytium' ); ?></label>
 
     <?php if (!$my_profile_page) : ?>
 	<select class='' name='payment_status' id="payment-status"><?php
@@ -54,10 +54,11 @@ $my_profile_page = isset( $_GET['page'] ) && $_GET['page'] == 'pt-my-profile';
 		endforeach;
 		?></select>
     <div class="option-description">
-		<?php echo sprintf( __( 'Read more about %spayment statuses%s.', 'paytium' ), '<a href="https://www.paytium.nl/handleiding/betalingen-beheren/#betekenis-van-statussen" target="_blank">', '</a>' ); ?>
+		<?php /* translators: %1$s: opening link tag, %2$s: closing link tag. */ ?>
+		<?php echo sprintf( esc_html__( 'Read more about %1$spayment statuses%2$s.', 'paytium' ), '<a href="https://www.paytium.nl/handleiding/betalingen-beheren/#betekenis-van-statussen" target="_blank">', '</a>' ); ?>
     </div>
     <?php else: ?>
-        <span class="option-value"><?php echo pt_get_payment_statuses()[$payment->status]; ?></span>
+        <span class="option-value"><?php echo esc_attr( pt_get_payment_statuses()[$payment->status] ); ?></span>
 	<?php endif; ?>
 
 </div>
@@ -65,7 +66,7 @@ $my_profile_page = isset( $_GET['page'] ) && $_GET['page'] == 'pt-my-profile';
 <?php if (!$my_profile_page) : ?>
     <div class='option-group'>
 
-        <label for='order-status'><?php _e( 'Order status', 'paytium' ); ?></label>
+        <label for='order-status'><?php esc_html_e( 'Order status', 'paytium' ); ?></label>
         <select class='' name='order_status' id="order-status"><?php
             foreach ( pt_get_order_statuses() as $key => $value ) :
 
@@ -82,22 +83,22 @@ $my_profile_page = isset( $_GET['page'] ) && $_GET['page'] == 'pt-my-profile';
 
 <div class='option-group'>
 
-	<label for='claimer'><?php _e( 'Amount', 'paytium' ); ?></label>
+	<label for='claimer'><?php esc_html_e( 'Amount', 'paytium' ); ?></label>
 	<span class="option-value"><?php echo esc_html( pt_float_amount_to_currency( $payment->get_amount(), $payment->currency ) ); ?></span>
 
 </div>
 
 <div class='option-group'>
 
-	<label for='claimer'><?php _e( 'Description', 'paytium' ); ?></label>
-	<span class="option-value"><?php echo $payment->get_description(); ?></span>
+	<label for='claimer'><?php esc_html_e( 'Description', 'paytium' ); ?></label>
+	<span class="option-value"><?php echo esc_attr( $payment->get_description() ); ?></span>
 
 </div>
 <?php if($source_link) : ?>
 <div class='option-group'>
 
-    <label for='source'><?php _e( 'Source', 'paytium' ); ?></label>
-    <a href="<?php echo $source_link; ?>" class="option-value" target="_blank"><?php echo $source_title; ?></a>
+    <label for='source'><?php esc_html_e( 'Source', 'paytium' ); ?></label>
+    <a href="<?php echo esc_url( $source_link ); ?>" class="option-value" target="_blank"><?php echo esc_attr( $source_title ); ?></a>
 
 </div>
 <?php endif;

@@ -151,7 +151,11 @@ function pt_register_settings() {
 				'pt_settings_' . $section_key,
 				pt_get_settings_field_args( $option, $section_key )
 			);
-			register_setting( 'pt_settings_' . $section_key, $option['id'] );
+			register_setting(
+				'pt_settings_' . $section_key,
+				$option['id'],
+				array( 'sanitize_callback' => pt_get_setting_sanitize_callback( isset( $option['type'] ) ? $option['type'] : 'text' ) )
+			);
 		}
 
         if ($section_key == 'advanced') {
@@ -161,6 +165,86 @@ function pt_register_settings() {
         }
 
 	}
+
+}
+
+/**
+ * Pick the sanitize callback for a settings field, based on its declared type.
+ *
+ * Plugin Check flags every register_setting() call that has no sanitize_callback.
+ * A blanket sanitize_text_field() would be WRONG here and would silently destroy
+ * customer settings on save:
+ *   - 'wpeditor' fields legitimately hold HTML,
+ *   - the *_all_lists / multi_select fields hold arrays, and sanitize_text_field()
+ *     returns an empty string when handed an array.
+ * So dispatch on the field type and keep both cases intact.
+ *
+ * @param string $type Field type as declared in the $pt_settings array.
+ * @return string Callable name suitable for register_setting()'s sanitize_callback.
+ */
+function pt_get_setting_sanitize_callback( $type ) {
+
+	switch ( $type ) {
+		case 'wpeditor':
+			return 'pt_sanitize_setting_html';
+		case 'number':
+			return 'pt_sanitize_setting_number';
+		default:
+			return 'pt_sanitize_setting_text';
+	}
+
+}
+
+/**
+ * Sanitize a plain-text setting. Recurses into arrays so multi-select and the
+ * mailing-list fields keep their shape instead of being flattened to ''.
+ *
+ * @param mixed $value Raw option value.
+ * @return mixed Sanitized value, same shape as the input.
+ */
+function pt_sanitize_setting_text( $value ) {
+
+	if ( is_array( $value ) ) {
+		return array_map( 'pt_sanitize_setting_text', $value );
+	}
+
+	if ( ! is_scalar( $value ) ) {
+		return $value;
+	}
+
+	return sanitize_text_field( $value );
+
+}
+
+/**
+ * Sanitize a rich-text setting, keeping the markup a post author is allowed to use.
+ *
+ * @param mixed $value Raw option value.
+ * @return mixed Sanitized value.
+ */
+function pt_sanitize_setting_html( $value ) {
+
+	if ( ! is_scalar( $value ) ) {
+		return $value;
+	}
+
+	return wp_kses_post( $value );
+
+}
+
+/**
+ * Sanitize a numeric setting without turning an empty field into 0.
+ *
+ * @param mixed $value Raw option value.
+ * @return string Numeric string, or '' when the field was left empty.
+ */
+function pt_sanitize_setting_number( $value ) {
+
+	if ( is_array( $value ) || ! is_scalar( $value ) || '' === trim( (string) $value ) ) {
+		return '';
+	}
+
+	return is_numeric( $value ) ? (string) $value : '';
 
 }
 
@@ -211,7 +295,7 @@ function pt_toggle_control_callback( $args ) {
 
 	$html = '<div class="pt-toggle-switch-wrap">
 			<label class="switch-light switch-candy switch-candy-blue" onclick="">
-				<input type="checkbox" id="pt_settings_' . $args['section'] . '[' . $args['id'] . ']" name="' . $args['id'] . '" value="1" ' . $checked . '/>
+				<input type="checkbox" id="pt_settings_' . esc_attr( $args['section'] ) . '[' . esc_attr( $args['id'] ) . ']" name="' . esc_attr( $args['id'] ) . '" value="1" ' . $checked . '/>
 				<span>
 					<span>' . __( 'Test', 'paytium' ) . '</span>
 					<span>' . __( 'Live', 'paytium' ) . '</span>
@@ -219,6 +303,7 @@ function pt_toggle_control_callback( $args ) {
 				<a></a>
 			</label></div>';
 
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $html is assembled above from static markup plus individually escaped values; wp_kses_post() cannot be used because it strips the form elements this builds.
 	echo $html;
 }
 
@@ -240,17 +325,18 @@ function pt_text_callback( $args ) {
 
 	$size = ( isset( $args['size'] ) && ! is_null( $args['size'] ) ) ? $args['size'] : '';
 	if ($size == 'textarea') {
-		$html = "\n" . '<textarea rows="9" id="' . $args['id'] . '" class="large-text" name="' . $args['id'] . '">' . trim( esc_attr( $value ) ) . '</textarea>' . "\n";
+		$html = "\n" . '<textarea rows="9" id="' . esc_attr( $args['id'] ) . '" class="large-text" name="' . esc_attr( $args['id'] ) . '">' . trim( esc_attr( $value ) ) . '</textarea>' . "\n";
     }
     else {
-		$html = "\n" . '<input type="text" class="' . $size . '" id="' . $args['id'] . '" name="' . $args['id'] . '" value="' . trim( esc_attr( $value ) ) . '"/>' . "\n";
+		$html = "\n" . '<input type="text" class="' . esc_attr( $size ) . '" id="' . esc_attr( $args['id'] ) . '" name="' . esc_attr( $args['id'] ) . '" value="' . trim( esc_attr( $value ) ) . '"/>' . "\n";
     }
 
 	// Render and style description text underneath if it exists.
 	if ( ! empty( $args['desc'] ) ) {
-		$html .= '<p class="description">' . $args['desc'] . '</p>' . "\n";
+		$html .= '<p class="description">' . wp_kses_post( $args['desc'] ) . '</p>' . "\n";
 	}
 
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $html is assembled above from static markup plus individually escaped values; wp_kses_post() cannot be used because it strips the form elements this builds.
 	echo $html;
 }
 
@@ -272,13 +358,14 @@ function pt_number_callback( $args ) {
 	$value = get_option( $args['id'], $args['std'] );
 
 	$size = ( isset( $args['size'] ) && ! is_null( $args['size'] ) ) ? $args['size'] : '';
-	$html = "\n" . '<input type="number" class="' . $size . '" id="' . $args['id'] . '" name="' . $args['id'] . '" value="' . trim( esc_attr( $value ) ) . '"/>' . "\n";
+	$html = "\n" . '<input type="number" class="' . esc_attr( $size ) . '" id="' . esc_attr( $args['id'] ) . '" name="' . esc_attr( $args['id'] ) . '" value="' . trim( esc_attr( $value ) ) . '"/>' . "\n";
 
 	// Render and style description text underneath if it exists.
 	if ( ! empty( $args['desc'] ) ) {
-		$html .= '<p class="description">' . $args['desc'] . '</p>' . "\n";
+		$html .= '<p class="description">' . wp_kses_post( $args['desc'] ) . '</p>' . "\n";
 	}
 
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $html is assembled above from static markup plus individually escaped values; wp_kses_post() cannot be used because it strips the form elements this builds.
 	echo $html;
 }
 
@@ -292,19 +379,19 @@ function pt_number_callback( $args ) {
 function pt_date_callback( $args ) {
 
 	if (strstr($args['id'],'start')) {
-		$default_value = isset( $args['std'] ) ? $args['std'] : date('Y-m-1');
+		$default_value = isset( $args['std'] ) ? $args['std'] : gmdate('Y-m-1');
 	}
 	elseif (strstr($args['id'],'end')) {
-		$default_value = isset( $args['std'] ) ? $args['std'] : date('Y-m-t');
+		$default_value = isset( $args['std'] ) ? $args['std'] : gmdate('Y-m-t');
 	}
 	else {
-		$default_value = isset( $args['std'] ) ? $args['std'] : date('Y-m-d');
+		$default_value = isset( $args['std'] ) ? $args['std'] : gmdate('Y-m-d');
 	}
 
 	$value = get_option( $args['id'], $default_value );
 	$value = $value == '' ? $default_value : $value;
 
-	?><input type="text" class="regular-text" id="<?php echo esc_attr( $args['id'] ); ?>" name="<?php echo esc_attr( $args['id'] ); ?>" value="<?php echo esc_attr( date('d-m-Y', strtotime($value ) ) ); ?>" /><?php
+	?><input type="text" class="regular-text" id="<?php echo esc_attr( $args['id'] ); ?>" name="<?php echo esc_attr( $args['id'] ); ?>" value="<?php echo esc_attr( gmdate('d-m-Y', strtotime($value ) ) ); ?>" /><?php
 
 }
 
@@ -323,13 +410,14 @@ function pt_checkbox_callback( $args ) {
 	$value   = get_option( $args['id'], $args['std'] );
 	$checked = checked( 1, $value, false );
 
-	$html = "\n" . '<input type="checkbox" id="' . $args['id'] . '" name="' . $args['id'] . '" value="1" ' . $checked . '/>' . "\n";
+	$html = "\n" . '<input type="checkbox" id="' . esc_attr( $args['id'] ) . '" name="' . esc_attr( $args['id'] ) . '" value="1" ' . $checked . '/>' . "\n";
 
 	// Render and style description text underneath if it exists.
 	if ( ! empty( $args['desc'] ) ) {
-		$html .= '<p class="description">' . $args['desc'] . '</p>' . "\n";
+		$html .= '<p class="description">' . wp_kses_post( $args['desc'] ) . '</p>' . "\n";
 	}
 
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $html is assembled above from static markup plus individually escaped values; wp_kses_post() cannot be used because it strips the form elements this builds.
 	echo $html;
 }
 
@@ -349,9 +437,10 @@ function pt_section_callback( $args ) {
 	$html = '';
 
 	if ( ! empty( $args['desc'] ) ) {
-		$html .= $args['desc'];
+		$html .= wp_kses_post( $args['desc'] );
 	}
 
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $html is assembled above from static markup plus individually escaped values; wp_kses_post() cannot be used because it strips the form elements this builds.
 	echo $html;
 }
 
@@ -372,20 +461,21 @@ function pt_select_callback( $args ) {
 
 	$value = get_option( $args['id'], $args['std'] );
 
-	$html = "\n" . '<select id="pt_settings_' . $args['section'] . '[' . $args['id'] . ']" name="' . $args['id'] . '"/>' . "\n";
+	$html = "\n" . '<select id="pt_settings_' . esc_attr( $args['section'] ) . '[' . esc_attr( $args['id'] ) . ']" name="' . esc_attr( $args['id'] ) . '"/>' . "\n";
 
 	foreach ( $args['options'] as $option => $name ) :
 		$selected = selected( $option, $value, false );
-		$html .= '<option value="' . $option . '" ' . $selected . '>' . $name . '</option>' . "\n";
+		$html .= '<option value="' . esc_attr( $option ) . '" ' . $selected . '>' . esc_html( $name ) . '</option>' . "\n";
 	endforeach;
 
 	$html .= '</select>' . "\n";
 
 	// Render and style description text underneath if it exists.
 	if ( ! empty( $args['desc'] ) ) {
-		$html .= '<p class="description">' . $args['desc'] . '</p>' . "\n";
+		$html .= '<p class="description">' . wp_kses_post( $args['desc'] ) . '</p>' . "\n";
 	}
 
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $html is assembled above from static markup plus individually escaped values; wp_kses_post() cannot be used because it strips the form elements this builds.
 	echo $html;
 }
 
@@ -401,17 +491,17 @@ function pt_multi_select_callback( $args ) {
 
 	$options = $args['options'];
 	$value = get_option( $args['id'] ) ? get_option( $args['id'] ) : array();
-	$html = "\n" . '<select class="select2 all-options pt_multiselect" multiple="multiple" id="pt_settings_' . $args['section'] . '[' . $args['id'] . ']" name="' . $args['id'] . '[]"/>' . "\n";
+	$html = "\n" . '<select class="select2 all-options pt_multiselect" multiple="multiple" id="pt_settings_' . esc_attr( $args['section'] ) . '[' . esc_attr( $args['id'] ) . ']" name="' . esc_attr( $args['id'] ) . '[]"/>' . "\n";
 
 	foreach ( $options as $option => $name ) {
 		$selected = in_array($option, $value) || empty($value) ? 'selected' : '';
-		$html .= '<option value="' . $option . '" ' .$selected. '>' . $name . '</option>' . "\n";
+		$html .= '<option value="' . esc_attr( $option ) . '" ' . $selected . '>' . esc_html( $name ) . '</option>' . "\n";
 	}
 
 	$html .= '</select>' . "\n";
 
 	if ( ! empty( $args['desc'] ) ) {
-		$html .= '<p class="description">' . $args['desc'] . '</p>' . "\n";
+		$html .= '<p class="description">' . wp_kses_post( $args['desc'] ) . '</p>' . "\n";
 	}
 
 	$html .= '<script type="text/javascript">
@@ -422,6 +512,7 @@ function pt_multi_select_callback( $args ) {
 		});
 	</script>';
 
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $html is assembled above from static markup plus individually escaped values; wp_kses_post() cannot be used because it strips the form elements this builds.
 	echo $html;
 }
 
@@ -438,11 +529,13 @@ function pt_radio_callback( $args ) {
 		$value   = get_option( $args['id'], $args['std'] );
 		$checked = checked( $key, $value, false );
 
-		echo '<input name="' . $args['id'] . '" id="' . $args['id'] . '" type="radio" value="' . $key . '" ' . $checked . '/>&nbsp;';
-		echo '<label for="' . $args['id'] . '">' . $option . '</label><br/>';
+		// A phpcs:ignore comment applies to the NEXT line, so keep it on one line.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $checked is the fixed string returned by WordPress' own checked(): ' checked="checked"' or ''.
+		echo '<input name="' . esc_attr( $args['id'] ) . '" id="' . esc_attr( $args['id'] ) . '" type="radio" value="' . esc_attr( $key ) . '" ' . $checked . '/>&nbsp;';
+		echo '<label for="' . esc_attr( $args['id'] ) . '">' . esc_html( $option ) . '</label><br/>';
 	}
 
-	echo '<p class="description">' . $args['desc'] . '</p>';
+	echo '<p class="description">' . wp_kses_post( $args['desc'] ) . '</p>';
 }
 
 /**
@@ -451,5 +544,6 @@ function pt_radio_callback( $args ) {
  * @since 1.0.0
  */
 function pt_missing_callback( $args ) {
-	printf( __( 'The callback function used for the <strong>%s</strong> setting is missing.', 'paytium' ), $args['id'] );
+	/* translators: %1$s: esc_html( $args['id'] ). */
+	printf( wp_kses_post( __( 'The callback function used for the <strong>%s</strong> setting is missing.', 'paytium' ) ), esc_html( $args['id'] ) );
 }

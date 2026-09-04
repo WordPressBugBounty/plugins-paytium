@@ -11,14 +11,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<table class="widefat payment-items-table pt-items-admin" style="width: 100%">
 		<thead>
 			<tr>
-				<th><?php _e( 'Item', 'paytium' ); ?></th>
-				<th><?php _e( 'Amount', 'paytium' ); ?></th>
-				<th><?php _e( 'Quantity', 'paytium' ); ?></th><?php
+				<th><?php esc_html_e( 'Item', 'paytium' ); ?></th>
+				<th><?php esc_html_e( 'Amount', 'paytium' ); ?></th>
+				<th><?php esc_html_e( 'Quantity', 'paytium' ); ?></th><?php
 				if ( $payment->get_tax_total() ) : ?>
-                    <th><?php _e( 'Total without tax', 'paytium' ); ?></th>
-					<th><?php _e( 'Taxes', 'paytium' ); ?></th>
+                    <th><?php esc_html_e( 'Total without tax', 'paytium' ); ?></th>
+					<th><?php esc_html_e( 'Taxes', 'paytium' ); ?></th>
                 <?php endif; ?>
-                <th><?php _e( 'Total', 'paytium' ); ?></th>
+                <th><?php esc_html_e( 'Total', 'paytium' ); ?></th>
 			</tr>
 		</thead>
 
@@ -31,8 +31,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 					$amount = esc_html(pt_float_amount_to_currency( $amount, $payment->currency ));
 					?><tr>
 						<td style="width: 40%; padding-right: 30px;"><?php echo esc_html($item->get_label()) . ' ' .  esc_html($item->get_value()); ?></td>
-						<td><?php echo $item->get_amount() == 0 ? '' : $amount; ?></td>
-						<td style=""><?php echo $item->get_quantity(); ?></td>
+						<td><?php echo esc_html( $item->get_amount() == 0 ? '' : $amount ); ?></td>
+						<td style=""><?php echo esc_attr( $item->get_quantity() ); ?></td>
 						<?php
 						if ( $payment->get_tax_total() ) :
 							if ( $item->get_tax_amount() ) :?>
@@ -58,7 +58,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <td></td>
                 <td></td>
 			<?php endif; ?>
-            <td><b><?php _e( 'Total before discount', 'paytium' ) ?></b></td>
+            <td><b><?php esc_html_e( 'Total before discount', 'paytium' ) ?></b></td>
             <td><?php echo esc_html(pt_float_amount_to_currency( $payment->get_total() + (float)$payment->get_discount_amount(), $payment->currency )); ?></td>
         </tr>
         <tr class="pt-discount-tr">
@@ -68,7 +68,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <td></td>
                 <td></td>
 			<?php endif; ?>
-            <td><b><?php _e( 'Discount', 'paytium' ) ?> (<?php echo $payment->get_discount_value() ?>)</b></td>
+            <td><b><?php esc_html_e( 'Discount', 'paytium' ) ?> (<?php echo esc_attr( $payment->get_discount_value() ) ?>)</b></td>
             <td style="color: darkred"><?php echo esc_html(pt_float_amount_to_currency( -(float)$payment->get_discount_amount(), $payment->currency )); ?></td>
         </tr>
         <?php endif; ?>
@@ -79,7 +79,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <td></td>
                 <td></td>
 			<?php endif; ?>
-            <td><b><?php _e( 'Subtotal', 'paytium' ); ?></b></td>
+            <td><b><?php esc_html_e( 'Subtotal', 'paytium' ); ?></b></td>
             <td><?php echo esc_html(pt_float_amount_to_currency( $payment->get_total() - $payment->get_tax_total(), $payment->currency )); ?></td>
 		</tr>
         <?php
@@ -89,7 +89,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <td></td>
                 <td></td>
                 <td></td>
-                <td><b><?php _e( 'Tax', 'paytium' ); ?></b></td>
+                <td><b><?php esc_html_e( 'Tax', 'paytium' ); ?></b></td>
                 <td><?php echo esc_html(pt_float_amount_to_currency( $payment->get_tax_total(), $payment->currency )); ?></td>
             </tr>
         <?php
@@ -102,7 +102,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <td></td>
                 <td></td>
 			<?php endif; ?>
-            <td><b><?php _e( 'Total', 'paytium' ); ?></b></td>
+            <td><b><?php esc_html_e( 'Total', 'paytium' ); ?></b></td>
             <td><b><?php echo esc_html(pt_float_amount_to_currency( $payment->get_total(), $payment->currency )); ?></b></td>
         </tr>
 		</tfoot>

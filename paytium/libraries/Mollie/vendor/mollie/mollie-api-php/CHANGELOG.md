@@ -5,28 +5,172 @@ Starting with v3, all notable changes to this project will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/mollie/mollie-api-php/compare/v3.5.0...HEAD)
+## [Unreleased](https://github.com/mollie/mollie-api-php/compare/v3.9.0...HEAD)
+
+### Added
+
+- `Mollie\Api\Contracts\ResourceOrigin` marker interface describing where
+  a hydrated resource came from. `Http\Response` now implements it.
+- `BaseResource::getOrigin()` / `setOrigin()` accessors on every hydrated
+  resource and collection. HTTP-hydrated resources set origin to the
+  `Response` automatically; no migration needed for existing user code.
+- `Mollie\Api\Webhooks\WebhookSnapshotOrigin` exposes the event id,
+  signature, and received-at timestamp of the webhook that produced a
+  hydrated resource. Accessible via `$resource->getOrigin()`.
+- `Mollie\Api\Webhooks\SnapshotHydrator` feeds a webhook snapshot through
+  the main `ResourceHydrator` after a one-line `json_decode(json_encode())`
+  normalization so nested values arrive as stdClass (matching the HTTP
+  path byte-for-byte).
+- `BaseEvent::asResource(Connector)` hydrates the embedded entity into a
+  fully-typed SDK resource and automatically threads the rich origin
+  (event id, signature, received-at).
+- `WebhookEventMapper::processPayload()` gains an optional `?string
+  $signature` parameter that is threaded through to the resulting event
+  and carried onto hydrated resources via `WebhookSnapshotOrigin`.
+- `ResourceCollection::withOrigin()` factory as the origin-aware sibling
+  of `withResponse()`.
+
+### Changed
+
+- **BC-implied:** `IsResponseAware::getResponse()` return type narrowed
+  from `Response` to `?Response`. HTTP-hydrated resources continue to
+  return a non-null `Response`, matching pre-refactor behavior.
+  Webhook-hydrated resources return `null`. User code that chains
+  `$resource->getResponse()->successful()` or similar without a null
+  check will NPE on webhook-origin resources — audit your webhook
+  handlers before upgrading. HTTP-only consumers see no change.
+- **BC-implied:** `HasResponse::getPendingRequest()` return type
+  narrowed from `PendingRequest` to `?PendingRequest`. Same rationale.
+- `WebhookEntity::asResource()` gains an optional
+  `?WebhookSnapshotOrigin` second parameter. Callers using the
+  single-arg form (`$event->entity()->asResource($mollie)`) continue to
+  work and receive a fallback origin with null signature. Mapper-driven
+  flow (`$event->asResource($mollie)`) passes the rich origin
+  automatically.
+- Hydrating a webhook payload no longer requires a valid API key on the
+  connector. Signed snapshots are self-sufficient, so a signing-secret-only
+  webhook worker can read the snapshot without any key. **Follow-up calls**
+  (`$payment->refunds()`, `$subscription->payments()`, etc.) still
+  require an authenticator — they fire real HTTP requests.
+- Follow-up methods on hydrated resources (`Payment::refunds/captures/chargebacks`,
+  `Profile::chargebacks/methods/payments/refunds`, `Subscription::payments`)
+  now fall back to their endpoint collection when the embedded webhook
+  snapshot does not carry the corresponding `_links.{name}.href`.
+  Previously these methods returned an empty collection in that case,
+  which was a silent behavioural difference between HTTP-origin and
+  webhook-origin resources. With this change the SDK routes through
+  the connector using the resource's id (same pattern
+  `PaymentLink::payments()` already used), so you get a live child
+  collection on both origins. Relative `_links.{name}.href` values in
+  webhook payloads are resolved against the client's base URL via
+  `Url::join`, no special handling required on the caller's side.
+### For contributors
+
+- `WebhookEventMapper::createWebhookEntityFromPayload()` switched from
+  `array_pop($_embedded)` to key-agnostic iteration that picks the first
+  candidate carrying `id` and `resource` fields. Mollie keys the
+  embedded entity under `_embedded.entity`; the new iteration resolves
+  that correctly and is resilient to any future schema tweak (additional
+  `_embedded` sub-blocks, renamed key) without silently breaking webhook
+  handling.
+
+### Removed
+
+- `WebhookEntity::buildSyntheticResponse()` and its dependencies on
+  `PendingRequest`, `DynamicGetRequest`, `Nyholm\Psr7\Request`, and
+  `Nyholm\Psr7\Response`. Webhook hydration goes through
+  `SnapshotHydrator`.
+- `protected Response $response` property on the `HasResponse` trait.
+  Storage is now `?ResourceOrigin $origin`; the `getResponse()` accessor
+  narrows back to `?Response` for callers. Third-party subclasses that
+  read `$this->response` directly must migrate to `$this->getResponse()`
+  or `$this->getOrigin()`.
+
+### Fixed
+
+- `docs/webhooks.md` previously stated that `$event->entity()` returns
+  null for simple payloads. It actually throws. Updated to correctly
+  describe reading the nullable `$event->entity` property or fetching
+  the resource via `$event->entityId`.
+
+## [v3.9.0](https://github.com/mollie/mollie-api-php/compare/v3.8.0...v3.9.0) - 2026-02-09
+
+## What's Changed
+* Fix: Don't call deprecated `setAccessible()` by @derrabus in https://github.com/mollie/mollie-api-php/pull/852
+* Fix documented `Capability::$requirements` structure by @derrabus in https://github.com/mollie/mollie-api-php/pull/853
+* feat(auth): add setToken helper for api keys by @Naoray in https://github.com/mollie/mollie-api-php/pull/859
+* Chore/enhance sdk with docs and convenience methods by @Naoray in https://github.com/mollie/mollie-api-php/pull/855
+* Fix/wrong payment details attribute by @Naoray in https://github.com/mollie/mollie-api-php/pull/854
+* Remove incorrect null return type from ClientLink::getRedirectUrl() by @Naoray in https://github.com/mollie/mollie-api-php/pull/865
+* Remove incorrect null return type from ClientLink::getRedirectUrl()   by @NormanAlbert91 in https://github.com/mollie/mollie-api-php/pull/862
+
+## New Contributors
+* @derrabus made their first contribution in https://github.com/mollie/mollie-api-php/pull/852
+* @NormanAlbert91 made their first contribution in https://github.com/mollie/mollie-api-php/pull/862
+
+**Full Changelog**: https://github.com/mollie/mollie-api-php/compare/v3.8.0...v3.9.0
+
+## [v3.8.0](https://github.com/mollie/mollie-api-php/compare/v3.7.0...v3.8.0) - 2026-01-06
+
+### What's Changed
+
+* feat: add metadata to connect balance transfer by @Naoray in https://github.com/mollie/mollie-api-php/pull/848
+* Fix cURL deprecation notice for PHP 8.5 and higher by @RobinvanderVliet in https://github.com/mollie/mollie-api-php/pull/847
+* fix: make TransferParty data accessible for debugging by @Naoray in https://github.com/mollie/mollie-api-php/pull/849
+* Sandervanhooft fix/inclusion qr mismatch by @Naoray in https://github.com/mollie/mollie-api-php/pull/851
+
+### New Contributors
+
+* @RobinvanderVliet made their first contribution in https://github.com/mollie/mollie-api-php/pull/847
+
+**Full Changelog**: https://github.com/mollie/mollie-api-php/compare/v3.7.0...v3.8.0
+
+## [v3.7.0](https://github.com/mollie/mollie-api-php/compare/v3.6.0...v3.7.0) - 2025-12-01
+
+### What's Changed
+
+* Add GOOGLEPAY and SWISH payment methods  by @samdejongobc in https://github.com/mollie/mollie-api-php/pull/844
+* Add fromArray to Money by @Naoray in https://github.com/mollie/mollie-api-php/pull/846
+
+### New Contributors
+
+* @samdejongobc made their first contribution in https://github.com/mollie/mollie-api-php/pull/844
+
+**Full Changelog**: https://github.com/mollie/mollie-api-php/compare/v3.6.0...v3.7.0
+
+## [v3.6.0](https://github.com/mollie/mollie-api-php/compare/v3.5.0...v3.6.0) - 2025-11-05
+
+### What's Changed
+
+* Feat/add balance transfer webhook events by @sandervanhooft in https://github.com/mollie/mollie-api-php/pull/842
+* Fixed webhook docs typo and explained next-gen webhook focus by @sandervanhooft in https://github.com/mollie/mollie-api-php/pull/841
+
+**Full Changelog**: https://github.com/mollie/mollie-api-php/compare/v3.5.0...v3.6.0
 
 ## [v3.5.0](https://github.com/mollie/mollie-api-php/compare/v3.4.0...v3.5.0) - 2025-10-28
 
 ### Added
+
 * Feat/add retry logic by @Naoray in https://github.com/mollie/mollie-api-php/pull/826
 * Feat/add fake retain requests option by @Naoray in https://github.com/mollie/mollie-api-php/pull/830
 * feat: add isEInvoice param and add support for testmode in all sales-… by @Naoray in https://github.com/mollie/mollie-api-php/pull/832
 * feat: add customerId and mandateId to create sales invoice request by @Naoray in https://github.com/mollie/mollie-api-php/pull/834
 * Feat/add balance transfer endpoint by @Naoray in https://github.com/mollie/mollie-api-php/pull/831
 * Feat/add webhook mapping and events by @Naoray in https://github.com/mollie/mollie-api-php/pull/829
-    - global Config that serves as a lookup map to easily map resources to their respective collection keys
-    - `MockEvent` to easily test event handling
-    - `Str` utility class
-    - `classBasename` to `Utility`
-    - `WebhookEntity` to serve as Container for Resource data received through webhooks (-> can be transformed into BaseResource)
-    - Webhook Events that are instanced via the `WebhookEventMapper`
- 
+  - global Config that serves as a lookup map to easily map resources to their respective collection keys
+  - `MockEvent` to easily test event handling
+  - `Str` utility class
+  - `classBasename` to `Utility`
+  - `WebhookEntity` to serve as Container for Resource data received through webhooks (-> can be transformed into BaseResource)
+  - Webhook Events that are instanced via the `WebhookEventMapper`
+  
+
 ### Changed
+
 - Feat/make sequence mock responses consume callables by @Naoray in https://github.com/mollie/mollie-api-php/pull/833
 
 ### Fixed
+
 * Change include to embed just like in GetPaginatedChargebacksRequest.php #837 by @Naoray in https://github.com/mollie/mollie-api-php/pull/838
 * Allow description on CreatePaymentRefundRequest to be empty by @Naoray in https://github.com/mollie/mollie-api-php/pull/839
 

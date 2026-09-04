@@ -11,25 +11,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-global $counter, $ptfg_counter,$pt_id, $limit_data, $until_data, $collected_amounts, $collected_fields, $collected_discounts, $form_currency;
+global $pt_counter, $pt_ptfg_counter,$pt_id, $pt_limit_data, $pt_until_data, $pt_collected_amounts, $pt_collected_fields, $pt_collected_discounts, $pt_form_currency;
 
-$counter             = 1;
-$ptfg_counter        = 0;
+$pt_counter             = 1;
+$pt_ptfg_counter        = 0;
 $pt_id               = 0; // Variable to hold each form's data-pt-id attribute.
-$limit_data          = array ();
-$until_data          = array ();
-$collected_amounts   = array ();
-$collected_fields    = array ();
-$collected_discounts = array ();
-$form_currency		 = array ();
+$pt_limit_data          = array ();
+$pt_until_data          = array ();
+$pt_collected_amounts   = array ();
+$pt_collected_fields    = array ();
+$pt_collected_discounts = array ();
+$pt_form_currency		 = array ();
 
 /**
  * Check that public.js is really loaded and otherwise add notification for admin
  */
 function paytium_check_javascript_loaded() {
 
-	global $plugin_slug;
-	if( !  wp_script_is( $plugin_slug.'-public', 'done' ) ){
+	global $pt_plugin_slug;
+	if( !  wp_script_is( $pt_plugin_slug.'-public', 'done' ) ){
 
 		if ( ! paytium_check_notifications( 'javascript')) {
 			$notification_counter = get_option( 'paytium_notification_counter' ) ? (int) get_option( 'paytium_notification_counter' ) + 1 : 1;
@@ -39,6 +39,8 @@ function paytium_check_javascript_loaded() {
 				'user_id' => '',
 				'status'  => 'open',
 				'slug'    => 'javascript',
+				/* translators: %1$s: opening link tag, %2$s: closing link tag. */
+				// phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
 				'message' => sprintf( __( '[PAYTIUM] Paytium has detected that a required JavaScript file isn\'t always loaded when your users view a form. ' .
 				                          'Please view %sJavaScript problemen en/of extra velden worden niet opgeslagen%s to fix this and otherwise ' .
 				                          'contact support@paytium.nl for assistance.', 'paytium' ), '<a href="https://www.paytium.nl/handleiding/veelgestelde-vragen/" target="_blank">', '</a>' )
@@ -59,7 +61,7 @@ function paytium_check_javascript_loaded() {
  */
 function pt_paytium_shortcode( $attr, $content = null ) {
 
-	global $pt_script_options, $limit_data, $until_data, $counter, $pt_id, $form_currency;
+	global $pt_script_options, $pt_limit_data, $pt_until_data, $pt_counter, $pt_id, $pt_form_currency;
 
 	add_action( 'wp_footer', 'paytium_check_javascript_loaded', '999' );
 
@@ -133,7 +135,7 @@ function pt_paytium_shortcode( $attr, $content = null ) {
 	), $attr, 'paytium' ) );
 
 	$currency = is_file( PT_PATH . 'features/currency.php' ) ? ($currency  ? $currency : get_option('paytium_currency', 'EUR')) : 'EUR';
-	$form_currency[$pt_id] = $currency;
+	$pt_form_currency[$pt_id] = $currency;
 
 	// Generate custom form id attribute if one not specified.
 	// Rename var for clarity.
@@ -142,9 +144,9 @@ function pt_paytium_shortcode( $attr, $content = null ) {
 		$form_id = 'pt_checkout_form_' . $pt_id;
 	}
 
-	if(empty($until_data[$pt_id])) {
-        $until_data[$pt_id]['until_date'] = $until ? $until : '';
-        $until_data[$pt_id]['until_message'] = $until_message;
+	if(empty($pt_until_data[$pt_id])) {
+        $pt_until_data[$pt_id]['until_date'] = $until ? $until : '';
+        $pt_until_data[$pt_id]['until_message'] = $until_message;
     }
 
 	Paytium_Shortcode_Tracker::set_as_base( 'paytium', $attr );
@@ -154,7 +156,7 @@ function pt_paytium_shortcode( $attr, $content = null ) {
 
 	// Check if key's are entered at all, otherwise throw error message
 	if ( empty( $mollie_api_key ) ) {
-		$limit_data = array ();
+		$pt_limit_data = array ();
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return '<div class="pt-form-alert">' . __( 'Payments are not possible at this moment.', 'paytium' ) . '</div>';
 		}
@@ -205,6 +207,7 @@ function pt_paytium_shortcode( $attr, $content = null ) {
 
 	// Check if pt-validation-failed is set (from pt_process_payment), and if so show an alert
 	if ( ! empty( $_REQUEST['pt-js-validation-failed'] ) && current_user_can( 'manage_options' ) ) {
+		/* translators: %1$s: URL of the Paytium FAQ page */
 		$html .= '<div class="pt-form-alert">' . sprintf( __( 'Paytium\'s JavaScript isn\'t loaded! <a href="%s">Please read this FAQ.</a>', 'paytium' ), 'https://www.paytium.nl/handleiding/veelgestelde-vragen/#javascript-problemen-met-paytium-of-extra-velden-worden-niet-opgeslagen' ) . '</div>';
 	}
 
@@ -233,8 +236,8 @@ function pt_paytium_shortcode( $attr, $content = null ) {
 
 	$html .= do_shortcode( $content );
 
-	if ($until_data[$pt_id]['until_date'] && time() > strtotime($until_data[$pt_id]['until_date']) ) {
-        return '<form class="pt-checkout-form"><div class="pt-form-alert">' . $until_data[$pt_id]['until_message'] . '</div></form>';
+	if ($pt_until_data[$pt_id]['until_date'] && time() > strtotime($pt_until_data[$pt_id]['until_date']) ) {
+        return '<form class="pt-checkout-form"><div class="pt-form-alert">' . $pt_until_data[$pt_id]['until_message'] . '</div></form>';
     }
 
     // BC - When 'amount' attribute is set at the main shortcode, add a hidden 'label' field
@@ -244,24 +247,25 @@ function pt_paytium_shortcode( $attr, $content = null ) {
 	    pt_paytium_collect_amounts( $amount );
 
 	    if (!empty($limit) && !empty($limit_message) && !empty($item_id)) {
-            $html .= '<input type="hidden" name="pt_items[' . $counter . '][item_id]" value="' . $item_id . '" data-pt-user-label="Item ID" />';
-            $html .= '<input type="hidden" name="pt_items[' . $counter . '][limit]" value="' . $limit . '" data-pt-user-label="Limit" />';
-            $html .= '<input type="hidden" name="pt_items[' . $counter . '][limit-message]" value="' . $limit_message . '" data-pt-user-label="Limit Message" />';
+            $html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][item_id]" value="' . $item_id . '" data-pt-user-label="Item ID" />';
+            $html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][limit]" value="' . $limit . '" data-pt-user-label="Limit" />';
+            $html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][limit-message]" value="' . $limit_message . '" data-pt-user-label="Limit Message" />';
 
             if (get_option('paytium_item_limits')) {
 
-                $paytium_item_limits = unserialize(get_option('paytium_item_limits'));
+                $paytium_item_limits = pt_unserialize_to_array(get_option('paytium_item_limits'));
 
                 if (array_key_exists(sanitize_key($item_id), $paytium_item_limits) && $paytium_item_limits[sanitize_key($item_id)] >= (int)$limit) {
 
-                    $limit_data = array();
+                    $pt_limit_data = array();
+                    // phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
                     return $html = '<form class="pt-checkout-form"><div class="pt-form-alert">' . __($limit_message, 'paytium') . '</div></form>';
                 }
             }
         }
 
 		if (!empty($crowdfunding_id)) {
-			$html .= '<input type="hidden" name="pt_items[' . $counter . '][crowdfunding_id]" value="' . $crowdfunding_id . '" data-pt-user-label="Crowdfunding ID" />';
+			$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][crowdfunding_id]" value="' . $crowdfunding_id . '" data-pt-user-label="Crowdfunding ID" />';
 		}
 
         $html .= pt_cf_label($attr);
@@ -320,7 +324,7 @@ function pt_paytium_shortcode( $attr, $content = null ) {
 	Paytium_Shortcode_Tracker::reset_error_count();
 
 	if ( $error_count > 0 ) {
-        $limit_data = array();
+        $pt_limit_data = array();
 		if ( current_user_can( 'manage_options' ) ) {
 			return Paytium_Shortcode_Tracker::print_errors();
 		}
@@ -328,16 +332,17 @@ function pt_paytium_shortcode( $attr, $content = null ) {
 		return '';
 	}
 
-    if (!empty($limit_data['limits']) && count($limit_data['limits']) == 1 && (isset($limit_data['amount_count']) && $limit_data['amount_count'] == 1)) {
+    if (!empty($pt_limit_data['limits']) && count($pt_limit_data['limits']) == 1 && (isset($pt_limit_data['amount_count']) && $pt_limit_data['amount_count'] == 1)) {
 
-        $message = array_values($limit_data['limits']);
+        $message = array_values($pt_limit_data['limits']);
 	    $message = $message[0];
 
 	    if ($message !== 0) {
+            // phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
             $html = '<form class="pt-checkout-form"><div class="pt-form-alert">' . __($message, 'paytium') . '</div></form>';
         }
     }
-    $limit_data = array();
+    $pt_limit_data = array();
 
 	return $html;
 
@@ -356,10 +361,10 @@ function pt_paytium_total( $attr ) {
 		return;
 	}
 
-	global $counter, $ptfg_counter, $pt_id, $form_currency;
-    $ptfg_counter++;
+	global $pt_counter, $pt_ptfg_counter, $pt_id, $pt_form_currency;
+    $pt_ptfg_counter++;
 
-	$currency = is_file( PT_PATH . 'features/currency.php' ) ? get_paytium_currency_symbol($form_currency[$pt_id]) : '€';
+	$currency = is_file( PT_PATH . 'features/currency.php' ) ? get_paytium_currency_symbol($pt_form_currency[$pt_id]) : '€';
 
 	if (!empty($attr)) {
 		foreach ($attr as $key => $attribute) {
@@ -376,19 +381,19 @@ function pt_paytium_total( $attr ) {
 
 	$label = get_option( 'paytium_total_label', $attr['label'] );
 
-	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_total_' . $counter, 'paytium_total', $attr, false );
+	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_total_' . $pt_counter, 'paytium_total', $attr, false );
 
 	$html = esc_html($label) . ' <span class="pt-total-amount">'.$currency.' -</span>';
 
 	if (isset($minimum) && $minimum != '') {
-		$html .= '<input type="hidden" class="pt-field pt-total-minimum" data-parsley-mintotal="' . esc_attr($minimum) . '" data-parsley-errors-container="#pt_total_errors_' . $counter . '" value="">';
-		$html .= '<div id="pt_total_errors_' . $counter . '"></div>';
+		$html .= '<input type="hidden" class="pt-field pt-total-minimum" data-parsley-mintotal="' . esc_attr($minimum) . '" data-parsley-errors-container="#pt_total_errors_' . $pt_counter . '" value="">';
+		$html .= '<div id="pt_total_errors_' . $pt_counter . '"></div>';
 	}
 
 	$args = pt_get_args( '', $attr );
-	$counter++;
+	$pt_counter++;
 
-	return '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-total-amount">' . apply_filters( 'pt_paytium_total', $html, $args ) . '</div>';
+	return '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-total-amount">' . apply_filters( 'pt_paytium_total', $html, $args ) . '</div>';
 
 }
 add_shortcode( 'paytium_total', 'pt_paytium_total' );
@@ -404,9 +409,9 @@ function pt_cf_checkbox( $attr ) {
 		return;
 	}
 
-	global $counter;
-    global $ptfg_counter;
-    $ptfg_counter++;
+	global $pt_counter;
+    global $pt_ptfg_counter;
+    $pt_ptfg_counter++;
 
 	if (!empty($attr)) {
 		foreach ($attr as $key => $attribute) {
@@ -423,24 +428,24 @@ function pt_cf_checkbox( $attr ) {
 
 	extract( $attr );
 
-	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_checkbox_' . $counter, 'paytium_checkbox', $attr, false );
+	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_checkbox_' . $pt_counter, 'paytium_checkbox', $attr, false );
 
-	$id = 'pt_cf_checkbox_' . $counter;
+	$id = 'pt_cf_checkbox_' . $pt_counter;
 
 	$html = '<label>';
 	$html .= '<input type="checkbox" id="' . esc_attr( $id ) . '" class="pt-cf-checkbox" name="pt_form_field[' . esc_attr( $id ) . ']" ';
-	$html .= ( ( $required === 'true' ) ? 'required' : '' ) . ' ' . checked( ( $default === 'true' || $default === 'checked' ) ) . ' value="Yes" data-parsley-errors-container="#pt_cf_checkbox_error_' . $counter . '">';
+	$html .= ( ( $required === 'true' ) ? 'required' : '' ) . ' ' . checked( ( $default === 'true' || $default === 'checked' ) ) . ' value="Yes" data-parsley-errors-container="#pt_cf_checkbox_error_' . $pt_counter . '">';
 	$html .= esc_html($label) . '</label>';
 
 	// Hidden field to hold a value to pass to Paytium payment record.
 	$html .= '<input type="hidden" id="' . esc_attr( $id ) . '_hidden" class="pt-cf-checkbox-hidden" name="pt_form_field[' . esc_attr( $id ) . ']" value="' . ( ( 'true' === $default || 'checked' === $default ) ? 'Yes' : 'No' ) . '">';
-	$html .= '<div id="pt_cf_checkbox_error_' . $counter . '"></div>';
+	$html .= '<div id="pt_cf_checkbox_error_' . $pt_counter . '"></div>';
 
-	$args = pt_get_args( $id, $attr, $counter );
+	$args = pt_get_args( $id, $attr, $pt_counter );
 
-	$counter++;
+	$pt_counter++;
 
-	return '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-checkbox">' . apply_filters( 'pt_paytium_checkbox', $html, $args ) . '</div>';
+	return '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-checkbox">' . apply_filters( 'pt_paytium_checkbox', $html, $args ) . '</div>';
 
 }
 add_shortcode( 'paytium_checkbox', 'pt_cf_checkbox' );
@@ -457,10 +462,10 @@ function pt_cf_checkbox_new( $attr ) {
 		return;
 	}
 
-    global $counter, $ptfg_counter, $limit_data, $pt_id, $form_currency;
-    $ptfg_counter++;
+    global $pt_counter, $pt_ptfg_counter, $pt_limit_data, $pt_id, $pt_form_currency;
+    $pt_ptfg_counter++;
 
-	$currency = is_file( PT_PATH . 'features/currency.php' ) ? get_paytium_currency_symbol($form_currency[$pt_id]) : '€';
+	$currency = is_file( PT_PATH . 'features/currency.php' ) ? get_paytium_currency_symbol($pt_form_currency[$pt_id]) : '€';
 	$currency_symbol_after = $currency == 'NOK' || $currency == 'SEK' || $currency == 'fr.';
 	
 	if (!empty($attr)) {
@@ -496,9 +501,9 @@ function pt_cf_checkbox_new( $attr ) {
 
 	extract( $attr );
 
-	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_checkbox_' . $counter, 'paytium_checkbox', $attr, false );
+	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_checkbox_' . $pt_counter, 'paytium_checkbox', $attr, false );
 
-	$id = 'pt_items[' . absint( $counter ) . ']';
+	$id = 'pt_items[' . absint( $pt_counter ) . ']';
 
 	$options = explode( '/', $options );
 
@@ -622,7 +627,7 @@ function pt_cf_checkbox_new( $attr ) {
 
         if (isset($item_ids) && isset($item_limits)) {
 
-            $paytium_item_limits = unserialize(get_option('paytium_item_limits'));
+            $paytium_item_limits = pt_unserialize_to_array(get_option('paytium_item_limits'));
 
             if (get_option('paytium_item_limits') && array_key_exists(sanitize_key($item_ids[$i - 1]), $paytium_item_limits)
                 && $paytium_item_limits[sanitize_key($item_ids[$i - 1])] >= (int)$item_limits[$i - 1]) {
@@ -642,7 +647,7 @@ function pt_cf_checkbox_new( $attr ) {
 
                 $html .= '<input type="checkbox" name="' . esc_attr($id) . '[amount]" value="' . $value . '" ' . checked($default, $option, false) .
                     ' class="' . esc_attr($id) . '_' . $i . $quantity_class . $amount_class . ' pt-checkbox-amount" data-pt-price="' . $value . '" data-pt-checkbox-id="' . $i . '"
-                    data-parsley-multiple="checkbox-' . $ptfg_counter . '" data-parsley-errors-container=".pt-checkbox-group-errors-' . $ptfg_counter . '"' . $required . '
+                    data-parsley-multiple="checkbox-' . $pt_ptfg_counter . '" data-parsley-errors-container=".pt-checkbox-group-errors-' . $pt_ptfg_counter . '"' . $required . '
                     data-parsley-errors-container=".pt-form-group" ' . $quantity_html . ' data-item_id="' . $item_ids[$i - 1] . '" data-limit="' . $item_limits[$i - 1] . '"'.$general_limit_html_data.'>';
                 $html .= '<span>' . (isset($option_name) ? $option_name : $option) . '</span>';
 
@@ -658,6 +663,7 @@ function pt_cf_checkbox_new( $attr ) {
 				if ( $show_items_left !== 'false' && isset($items_left) && $items_left < $show_items_left_after &&
 					(($show_items_left_only_for_admin && current_user_can('administrator')) || (!$show_items_left_only_for_admin))) {
 
+					/* translators: %1$s: number of items still available. */
 					$html .= '<p class="pt-items-left">'.sprintf(__('Only %s left!','paytium'), $items_left).'</p>';
 				}
 
@@ -673,7 +679,7 @@ function pt_cf_checkbox_new( $attr ) {
 			$general_limit_class = empty($quantity) ? ' general-limit-item' : '';
 			$html .= '<input type="checkbox" name="' . esc_attr($id) . '[amount]" value="' . $value . '" ' . checked($default, $option, false) .
 				' class="' . esc_attr($id) . '_' . $i . $quantity_class . $amount_class . $general_limit_class . ' pt-checkbox-amount" data-pt-price="' . $value . '" data-pt-checkbox-id="' . $i . '"
-                    data-parsley-multiple="checkbox-' . $ptfg_counter . '" data-parsley-errors-container=".pt-checkbox-group-errors-' . $ptfg_counter . '"' . $required . '
+                    data-parsley-multiple="checkbox-' . $pt_ptfg_counter . '" data-parsley-errors-container=".pt-checkbox-group-errors-' . $pt_ptfg_counter . '"' . $required . '
                     data-parsley-errors-container=".pt-form-group" ' . $quantity_html . $item_id . '"'.$general_limit_html_data.'>';
 			$html .= '<span>' . (isset($option_name) ? $option_name : $option) . '</span>';
 
@@ -689,7 +695,7 @@ function pt_cf_checkbox_new( $attr ) {
         else {
             // Don't use built-in checked() function here for now since we need "checked" in double quotes.
             $html .= '<input type="checkbox" name="' . esc_attr($id) . '[amount]" value="' . $value . '" ' . checked($default, $option, false) .
-                ' class="' . esc_attr($id) . '_' . $i . $quantity_class . $amount_class . ' pt-checkbox-amount" data-pt-price="' . $value . '" data-pt-checkbox-id="' . $i . '" data-parsley-multiple="checkbox-' . $ptfg_counter . '" data-parsley-errors-container=".pt-checkbox-group-errors-' . $ptfg_counter . '"' . $required . ' data-parsley-errors-container=".pt-form-group" ' . $quantity_html . '>';
+                ' class="' . esc_attr($id) . '_' . $i . $quantity_class . $amount_class . ' pt-checkbox-amount" data-pt-price="' . $value . '" data-pt-checkbox-id="' . $i . '" data-parsley-multiple="checkbox-' . $pt_ptfg_counter . '" data-parsley-errors-container=".pt-checkbox-group-errors-' . $pt_ptfg_counter . '"' . $required . ' data-parsley-errors-container=".pt-form-group" ' . $quantity_html . '>';
             $html .= '<span>' . (isset($option_name) ? $option_name : $option) . '</span>';
 
         }
@@ -717,7 +723,7 @@ function pt_cf_checkbox_new( $attr ) {
 		$i ++;
 	}
 
-	$html .= '<div class="pt-checkbox-group-errors-'.$ptfg_counter.'"></div>';
+	$html .= '<div class="pt-checkbox-group-errors-'.$pt_ptfg_counter.'"></div>';
 	$html .= '<input type="hidden" name="' . $id . '[amount]" id="' . $id . '[amount][total]" value="" data-pt-price="' . esc_attr( pt_user_amount_to_float($default) ) . '" />';
 	$html .= '<input type="hidden" name="' . $id . '[label]" value="' . wp_kses_post( $attr['label'] ) . '" data-pt-original-label="' . wp_kses_post( $attr['label'] ) . '" data-pt-checked-options="[]">';
 	$html .= '<input type="hidden" name="' . $id . '[value]" value="">';
@@ -735,29 +741,30 @@ function pt_cf_checkbox_new( $attr ) {
 	}
 
 	if (!empty($crowdfunding_id)) {
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][crowdfunding_id]" value="' . $crowdfunding_id . '" data-pt-user-label="Crowdfunding ID" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][crowdfunding_id]" value="' . $crowdfunding_id . '" data-pt-user-label="Crowdfunding ID" />';
 	}
 
     $html .= '</div>'; //pt-checkbox-group
 
-	$args = pt_get_args( $id, $attr, $counter );
+	$args = pt_get_args( $id, $attr, $pt_counter );
 
-	$counter++; // Increment static counter
+	$pt_counter++; // Increment static counter
 
     if ($i == $k && $i != $g) {
-        $limit_data['limits'][$item_id] = $limit_message;
+        $pt_limit_data['limits'][$item_id] = $limit_message;
         if ($options_are_amounts == 'true' || !empty($amounts)) {
-            if(isset($limit_data['amount_count'])) {
-                $limit_data['amount_count']++;
+            if(isset($pt_limit_data['amount_count'])) {
+                $pt_limit_data['amount_count']++;
             }
-            else $limit_data['amount_count'] = 1;
+            else $pt_limit_data['amount_count'] = 1;
         }
+        // phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
         $html = '<div class="pt-form-alert">' . __($limit_message, 'paytium') . '</div>';
     }
 	elseif ($i == $g) {
 		$html = '';
 	}
-    return '<div class="pt-form-group pt-form-group-' . $ptfg_counter . ' pt-form-group-checkbox-new '. $has_quantity_class.'">' . apply_filters('pt_paytium_checkbox', $html, $args) . '</div>';
+    return '<div class="pt-form-group pt-form-group-' . $pt_ptfg_counter . ' pt-form-group-checkbox-new '. $has_quantity_class.'">' . apply_filters('pt_paytium_checkbox', $html, $args) . '</div>';
 
 }
 
@@ -774,9 +781,9 @@ function pt_cf_number( $attr ) {
 		return;
 	}
 
-	global $counter;
-    global $ptfg_counter;
-    $ptfg_counter++;
+	global $pt_counter;
+    global $pt_ptfg_counter;
+    $pt_ptfg_counter++;
 
 	if (!empty($attr)) {
 		foreach ($attr as $key => $attribute) {
@@ -799,11 +806,11 @@ function pt_cf_number( $attr ) {
 
 	extract( $attr );
 
-	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_number_' . $counter, 'paytium_number', $attr, false );
+	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_number_' . $pt_counter, 'paytium_number', $attr, false );
 
 	// Check for ID and if it doesn't exist then we will make our own
 	if ( $id == '' ) {
-		$id = 'pt_cf_number_' . $counter;
+		$id = 'pt_cf_number_' . $pt_counter;
 	}
 
 	$quantity_html  = ( ( 'true' == $options_are_quantities ) ? 'data-pt-quantity="true" data-parsley-min="1" ' : '' );
@@ -820,10 +827,10 @@ function pt_cf_number( $attr ) {
 	if (!empty($multiplier_id)) {
 		$multiplier_class = " pt_multiplier";
 		$multiplier_data = ' data-pt_multiplier_id="'.$multiplier_id.'"';
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][multiplier_id]" value="' . $multiplier_id . '" data-pt-user-label="Multiplier ID" />';
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][label]" value="' . esc_html($label) . '" data-pt-user-label="Multiplier ID" />';
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][type]" value="multiplier" data-pt-user-label="Multiplier ID" />';
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][amount]" value="0" data-pt-user-label="Multiplier ID" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][multiplier_id]" value="' . $multiplier_id . '" data-pt-user-label="Multiplier ID" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][label]" value="' . esc_html($label) . '" data-pt-user-label="Multiplier ID" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][type]" value="multiplier" data-pt-user-label="Multiplier ID" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][amount]" value="0" data-pt-user-label="Multiplier ID" />';
 	}
 
 	// No Parsley JS number validation yet as HTML5 number type takes care of it.
@@ -831,11 +838,11 @@ function pt_cf_number( $attr ) {
 	$html .= 'placeholder="' . esc_attr( $placeholder ) . '" value="' . esc_attr( $default ) . '" ';
 	$html .= $min . $max . $step . ( ( $required === 'true' ) ? 'required' : '' ) . $quantity_html . $multiplier_data . '>';
 
-	$args = pt_get_args( $id, $attr, $counter );
+	$args = pt_get_args( $id, $attr, $pt_counter );
 
-	$counter++;
+	$pt_counter++;
 
-	return '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-number">' . apply_filters( 'pt_paytium_number', $html, $args ) . '</div>';
+	return '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-number">' . apply_filters( 'pt_paytium_number', $html, $args ) . '</div>';
 
 }
 add_shortcode( 'paytium_number', 'pt_cf_number' );
@@ -853,10 +860,10 @@ function pt_field( $attributes ) {
 		return;
 	}
 
-	global $counter;
-	global $ptfg_counter;
+	global $pt_counter;
+	global $pt_ptfg_counter;
 	global $pt_id;
-	global $until_data;
+	global $pt_until_data;
 
 	if (!empty($attributes)) {
 		foreach ($attributes as $key => $attribute) {
@@ -905,7 +912,7 @@ function pt_field( $attributes ) {
 
 	extract( $attr );
 
-	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_field_' . $counter, 'paytium_field', $attr, false );
+	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_field_' . $pt_counter, 'paytium_field', $attr, false );
 
 	// Default attributes
 	$class       = ( ! empty( $attr['class'] ) ) ? ' ' . esc_attr( $attr['class'] ) : '';
@@ -916,14 +923,14 @@ function pt_field( $attributes ) {
 	$required    = ( ( $attr['required'] ) == 'true' ) ? 'required' : '';
 	$user_data   = ( ! empty( $attr['user_data'] ) ) ? $attr['user_data'] : 'false';
 
-    if(empty($until_data[$pt_id]['until_date'])) {
-        $until_data[$pt_id]['until_date'] = $until ? $until : '';
-        $until_data[$pt_id]['until_message'] = $until_message;
+    if(empty($pt_until_data[$pt_id]['until_date'])) {
+        $pt_until_data[$pt_id]['until_date'] = $until ? $until : '';
+        $pt_until_data[$pt_id]['until_message'] = $until_message;
     }
 
-	pt_paytium_collect_fields( $counter, $type, $required );
+	pt_paytium_collect_fields( $pt_counter, $type, $required );
 
-	$id = 'pt_items[' . absint( $counter ) . ']';
+	$id = 'pt_items[' . absint( $pt_counter ) . ']';
 
 	$html = '';
 
@@ -933,12 +940,18 @@ function pt_field( $attributes ) {
 
 			// Check that field is a known type (for users making mistakes)
 			if (current_user_can( 'manage_options' ) ) {
-				$html .= '<div class="pt-form-alert">' . __( 'Unknown field type "'.$attr["type"].'" found. This field will automatically be converted to a field of type "text", but it\'s better to use one of the official types.  <a href="https://www.paytium.nl/handleiding/extra-velden/" target="_blank" rel="nofollow">Read more ></a>', 'paytium' ) . '</div>';
+				$html .= '<div class="pt-form-alert">' . sprintf(
+					/* translators: %1$s: the unrecognised field type, %2$s: opening link tag, %3$s: closing link tag. */
+					wp_kses_post( __( 'Unknown field type "%1$s" found. This field will automatically be converted to a field of type "text", but it\'s better to use one of the official types. %2$sRead more >%3$s', 'paytium' ) ),
+					esc_html( $attr['type'] ),
+					'<a href="https://www.paytium.nl/handleiding/extra-velden/" target="_blank" rel="nofollow">',
+					'</a>'
+				) . '</div>';
 			}
 
 		case 'text':
 
-            $ptfg_counter++;
+            $pt_ptfg_counter++;
 
 			$default            = $attr['default'];
 			$label              = ( ! empty( $attr['label'] ) ) ? $attr['label'] : 'Text';
@@ -948,8 +961,8 @@ function pt_field( $attributes ) {
 		// Try to guess the field data type
 		$autocomplete = pt_guess_autocomplete( $label );
 
-			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-text' . $has_quantity_class . $class . '">';
-			$html .= '<label for="pt-field-text">' . esc_html($label) . ':</label><input type="text" id="pt-field-text-' . $counter . '" name="pt-field-text-' . $counter . '" autocomplete="' . $autocomplete . '" class="pt-field pt-field-text' . $paid_field_class . '" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" data-pt-price="' . pt_user_amount_to_float($attr['amount']) . '" ' . $required . ' ' . $placeholder  . ' ' . $maxlength . ' ' . $minlength . ' ' . $validation . '/>';
+			$html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-text' . $has_quantity_class . $class . '">';
+			$html .= '<label for="pt-field-text">' . esc_html($label) . ':</label><input type="text" id="pt-field-text-' . $pt_counter . '" name="pt-field-text-' . $pt_counter . '" autocomplete="' . $autocomplete . '" class="pt-field pt-field-text' . $paid_field_class . '" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" data-pt-price="' . pt_user_amount_to_float($attr['amount']) . '" ' . $required . ' ' . $placeholder  . ' ' . $maxlength . ' ' . $minlength . ' ' . $validation . '/>';
 
 
 			if(!empty($quantity)) {
@@ -976,15 +989,15 @@ function pt_field( $attributes ) {
 
 		case 'hidden':
 
-			$ptfg_counter++;
+			$pt_ptfg_counter++;
 
 			$default  = $attr['default'];
 			$label    = ( ! empty( $attr['label'] ) ) ? $attr['label'] : 'Text';
 			$paid_field_class = ( ! empty( $attr['amount'] ) ) ? ' pt-paid-field' : '';
 			$has_quantity_class = ( ! empty( $attr['quantity'] ) ) ? ' has-quantity-input' : '';
 
-			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-hidden' . $has_quantity_class . $class . '">';
-			$html .= '<input type="hidden" id="pt-field-hidden-' . $counter . '" name="pt-field-hidden-' . $counter . '" class="pt-field pt-field-hidden' . $paid_field_class . '" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" data-pt-price="' . pt_user_amount_to_float($attr['amount']) . '" />';
+			$html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-hidden' . $has_quantity_class . $class . '">';
+			$html .= '<input type="hidden" id="pt-field-hidden-' . $pt_counter . '" name="pt-field-hidden-' . $pt_counter . '" class="pt-field pt-field-hidden' . $paid_field_class . '" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" data-pt-price="' . pt_user_amount_to_float($attr['amount']) . '" />';
 
 			if (!empty($attr['amount'])) {
 				$html .= '<input type="hidden" name="' . $id . '[amount]" value="' . pt_user_amount_to_float($attr['amount']) . '"/>';
@@ -1006,16 +1019,16 @@ function pt_field( $attributes ) {
 
 		case 'postcode':
 
-			$ptfg_counter ++;
+			$pt_ptfg_counter ++;
 			$default     = ( ! empty( $attr['default'] ) ) ? $attr['default'] : '';
 			$label       = ( ! empty( $attr['label'] ) ) ? $attr['label'] : 'Postcode';
 
 			// Try to guess the field data type
 			$autocomplete = pt_guess_autocomplete( $label );
 
-			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-postcode' . $class . '">';
-			$html .= '<label for="pt-field-postcode">' . esc_html($label) . ':</label><input type="text" id="pt-field-postcode-' . $counter . '" name="pt-field-postcode-' . $counter . '" autocomplete="' . $autocomplete . '" class="pt-field pt-field-postcode" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" ' . $required . '  ' . $placeholder  . ' ' . $maxlength . ' ' . $minlength . ' ' . $validation .  ' data-parsley-postcode data-parsley-errors-container="#parsley-errors-list-postcode-' . $counter . '" />';
-			$html .= '<div id="parsley-errors-list-postcode-' . $counter . '"></div>';
+			$html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-postcode' . $class . '">';
+			$html .= '<label for="pt-field-postcode">' . esc_html($label) . ':</label><input type="text" id="pt-field-postcode-' . $pt_counter . '" name="pt-field-postcode-' . $pt_counter . '" autocomplete="' . $autocomplete . '" class="pt-field pt-field-postcode" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" ' . $required . '  ' . $placeholder  . ' ' . $maxlength . ' ' . $minlength . ' ' . $validation .  ' data-parsley-postcode data-parsley-errors-container="#parsley-errors-list-postcode-' . $pt_counter . '" />';
+			$html .= '<div id="parsley-errors-list-postcode-' . $pt_counter . '"></div>';
 			$html .= '</div>'; // pt-form-group
 
 
@@ -1024,13 +1037,13 @@ function pt_field( $attributes ) {
 		case 'name':
 		case 'naam':
 
-			$ptfg_counter ++;
+			$pt_ptfg_counter ++;
 			$default     = ( ! empty( $attr['default'] ) ) ? $attr['default'] : pt_prefill_name();
 			$label       = ( ! empty( $attr['label'] ) ) ? $attr['label'] : 'Full name';
 
-			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-name' . $class . '">';
-			$html .= '<label for="pt-field-name">' . esc_html($label) . ':</label><input type="text" id="pt-field-name-' . $counter . '" name="pt-field-name-' . $counter . '" autocomplete="name" class="pt-field pt-field-name" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" ' . $required . '  ' . $placeholder  . ' ' . $maxlength . ' ' . $minlength . ' ' . $validation . ' />';
-			$html .= pt_prefill_warning( $counter ); // Show a warning to editors and administrators about prefilled fields (so we get less requests about this)
+			$html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-name' . $class . '">';
+			$html .= '<label for="pt-field-name">' . esc_html($label) . ':</label><input type="text" id="pt-field-name-' . $pt_counter . '" name="pt-field-name-' . $pt_counter . '" autocomplete="name" class="pt-field pt-field-name" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" ' . $required . '  ' . $placeholder  . ' ' . $maxlength . ' ' . $minlength . ' ' . $validation . ' />';
+			$html .= pt_prefill_warning( $pt_counter ); // Show a warning to editors and administrators about prefilled fields (so we get less requests about this)
 			$html .= '</div>'; // pt-form-group
 
 			break;
@@ -1038,13 +1051,13 @@ function pt_field( $attributes ) {
 		case 'voornaam':
 		case 'firstname':
 
-			$ptfg_counter ++;
+			$pt_ptfg_counter ++;
 			$default     = ( ! empty( $attr['default'] ) ) ? $attr['default'] : pt_prefill_first_name();
 			$label       = ( ! empty( $attr['label'] ) ) ? $attr['label'] : 'First name';
 
-			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-firstname' . $class . '">';
-			$html .= '<label for="pt-field-firstname">' . esc_html($label) . ':</label><input type="text" id="pt-field-firstname-' . $counter . '" name="pt-field-firstname-' . $counter . '" autocomplete="given-name" class="pt-field pt-field-firstname" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" ' . $required . ' ' . $placeholder .' "/>';
-			$html .= pt_prefill_warning( $counter ); // Show a warning to editors and administrators about prefilled fields (so we get less requests about this)
+			$html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-firstname' . $class . '">';
+			$html .= '<label for="pt-field-firstname">' . esc_html($label) . ':</label><input type="text" id="pt-field-firstname-' . $pt_counter . '" name="pt-field-firstname-' . $pt_counter . '" autocomplete="given-name" class="pt-field pt-field-firstname" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" ' . $required . ' ' . $placeholder .' "/>';
+			$html .= pt_prefill_warning( $pt_counter ); // Show a warning to editors and administrators about prefilled fields (so we get less requests about this)
 			$html .= '</div>'; // pt-form-group
 
 			break;
@@ -1055,10 +1068,10 @@ function pt_field( $attributes ) {
 			$default     = ( ! empty( $attr['default'] ) ) ? $attr['default'] : pt_prefill_last_name();
 			$label       = ( ! empty( $attr['label'] ) ) ? $attr['label'] : 'Last name';
 
-            $ptfg_counter++;
-			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-lastname' . $class . '">';
-			$html .= '<label for="pt-field-lastname">' . esc_html($label) . ':</label><input type="text" id="pt-field-lastname-' . $counter . '" name="pt-field-lastname-' . $counter . '" autocomplete="family-name" class="pt-field pt-field-lastname" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" ' . $required . '  ' . $placeholder  . ' ' . $maxlength . ' ' . $minlength . ' ' . $validation . '/>';
-			$html .= pt_prefill_warning( $counter ); // Show a warning to editors and administrators about prefilled fields (so we get less requests about this)
+            $pt_ptfg_counter++;
+			$html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-lastname' . $class . '">';
+			$html .= '<label for="pt-field-lastname">' . esc_html($label) . ':</label><input type="text" id="pt-field-lastname-' . $pt_counter . '" name="pt-field-lastname-' . $pt_counter . '" autocomplete="family-name" class="pt-field pt-field-lastname" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" ' . $required . '  ' . $placeholder  . ' ' . $maxlength . ' ' . $minlength . ' ' . $validation . '/>';
+			$html .= pt_prefill_warning( $pt_counter ); // Show a warning to editors and administrators about prefilled fields (so we get less requests about this)
 			$html .= '</div>'; // pt-form-group
 
 			break;
@@ -1139,19 +1152,19 @@ function pt_field( $attributes ) {
 				$newsletter_hide_checkbox = get_option( $hide_checkbox );
 			}
 
-            $ptfg_counter++;
-			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-email' . $has_quantity_class . $class . '">';
+            $pt_ptfg_counter++;
+			$html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-email' . $has_quantity_class . $class . '">';
 			$html .= '<label for="pt-field-email">' . esc_html($label) . ':</label>';
-			$html .= '<input type="email" id="pt-field-email-' . $counter . '" name="pt-field-email-' . $counter . '" autocomplete="email" class="pt-field pt-field-email' . $paid_field_class . '" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" data-pt-price="' . pt_user_amount_to_float($attr['amount']) . '" ' . $required . '  ' . $placeholder  . ' ' . $maxlength . ' ' . $minlength . ' ' . $validation . ' data-parsley-errors-container="#parsley-errors-list-email-' . $counter . '"  />';
-			$html .= pt_prefill_warning( $counter ); // Show a warning to editors and administrators about prefilled fields (so we get less requests about this)
+			$html .= '<input type="email" id="pt-field-email-' . $pt_counter . '" name="pt-field-email-' . $pt_counter . '" autocomplete="email" class="pt-field pt-field-email' . $paid_field_class . '" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" data-pt-price="' . pt_user_amount_to_float($attr['amount']) . '" ' . $required . '  ' . $placeholder  . ' ' . $maxlength . ' ' . $minlength . ' ' . $validation . ' data-parsley-errors-container="#parsley-errors-list-email-' . $pt_counter . '"  />';
+			$html .= pt_prefill_warning( $pt_counter ); // Show a warning to editors and administrators about prefilled fields (so we get less requests about this)
 
 
 			// Add a filter here to allow developers to hook into the form
 			$filter_html = '';
 			$newsletter_segments = is_array($newsletter_segments) ? $newsletter_segments : esc_attr($newsletter_segments);
-			$html .= apply_filters( 'pt_after_email_field', $filter_html, $newsletter, $newsletter_label, esc_attr($newsletter_list), $newsletter_segments, $newsletter_after, $newsletter_hide_checkbox, $counter );
+			$html .= apply_filters( 'pt_after_email_field', $filter_html, $newsletter, $newsletter_label, esc_attr($newsletter_list), $newsletter_segments, $newsletter_after, $newsletter_hide_checkbox, $pt_counter );
 
-			$html .= '<div id="parsley-errors-list-email-' . $counter . '"></div>';
+			$html .= '<div id="parsley-errors-list-email-' . $pt_counter . '"></div>';
 			if(!empty($quantity)) {
 				$attributes = '';
 				$attributes .= (!empty($quantity_min) ? 'min="' . $quantity_min . '" ' : '');
@@ -1175,26 +1188,26 @@ function pt_field( $attributes ) {
 			break;
 
 		case 'phone':
-			$ptfg_counter ++;
+			$pt_ptfg_counter ++;
 			$default     = ! empty( $attr['default'] ) ? $attr['default'] : '';
 			$label       = ! empty( $attr['label'] ) ? $attr['label'] : 'Phone';
 
-			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-phone' . $class . '">';
-			$html .= '<label for="pt-field-phone">' . esc_html($label) . ':</label><input type="text" id="pt-field-phone-' . $counter . '" name="pt-field-phone-' . $counter . '" autocomplete="given-name" class="pt-field pt-field-phone" data-parsley-phone data-pt-user-label="' . $label . '" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '"  ' . $required . ' ' . $placeholder .' "/>';
+			$html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-phone' . $class . '">';
+			$html .= '<label for="pt-field-phone">' . esc_html($label) . ':</label><input type="text" id="pt-field-phone-' . $pt_counter . '" name="pt-field-phone-' . $pt_counter . '" autocomplete="given-name" class="pt-field pt-field-phone" data-parsley-phone data-pt-user-label="' . $label . '" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '"  ' . $required . ' ' . $placeholder .' "/>';
 			$html .= '</div>'; // pt-form-group
 
 			break;
 
 		case 'textarea':
 
-            $ptfg_counter++;
+            $pt_ptfg_counter++;
 			$default  = $attr['default'];
 			$label    = ( ! empty( $attr['label'] ) ) ? $attr['label'] : 'Comments';
 			$paid_field_class = ( ! empty( $attr['amount'] ) ) ? ' pt-paid-field' : '';
 			$has_quantity_class = ( ! empty( $attr['quantity'] ) ) ? ' has-quantity-input' : '';
 
-			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-textarea' . $has_quantity_class . $class . '">';
-			$html .= '<label for="pt-field-textarea">' . esc_html($label) . ':</label><textarea id="pt-field-textarea-' . $counter . '" name="pt-field-textarea-' . $counter . '" class="pt-field pt-field-textarea' . $paid_field_class . '" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" data-pt-price="' . pt_user_amount_to_float($attr['amount']) . '" ' . $required . ' ' . $maxlength . ' ' . $minlength . ' ' . $validation . ' ' . $placeholder . '>' . $default . '</textarea>';
+			$html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-textarea' . $has_quantity_class . $class . '">';
+			$html .= '<label for="pt-field-textarea">' . esc_html($label) . ':</label><textarea id="pt-field-textarea-' . $pt_counter . '" name="pt-field-textarea-' . $pt_counter . '" class="pt-field pt-field-textarea' . $paid_field_class . '" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" data-pt-price="' . pt_user_amount_to_float($attr['amount']) . '" ' . $required . ' ' . $maxlength . ' ' . $minlength . ' ' . $validation . ' ' . $placeholder . '>' . $default . '</textarea>';
 			if(!empty($quantity)) {
 				$attributes = '';
 				$attributes .= (!empty($quantity_min) ? 'min="' . $quantity_min . '" ' : '');
@@ -1225,13 +1238,13 @@ function pt_field( $attributes ) {
 				break;
 			}
 
-            $ptfg_counter++;
+            $pt_ptfg_counter++;
 			$default  = $attr['default'];
 			$label    = ( ! empty( $attr['label'] ) ) ? $attr['label'] : 'Options';
 			$options  = ( ! empty( $attr['options'] ) ) ? $attr['options'] : 'No options found.';
 			$options = explode( '/', $options );
 
-			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-radio' . $class . '">';
+			$html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-radio' . $class . '">';
 			$html .= ( ! empty( $label ) ? '<label for="pt-field-radio">' . esc_html($label) . ':</label>' : '' );
 			$html .= '<div class="pt-radio-group" data-pt-user-label="'.esc_attr($label).'">';
 
@@ -1247,7 +1260,7 @@ function pt_field( $attributes ) {
 				}
 
 				$html .= '<label title="' . esc_attr( $option ) . '">';
-				$html .= '<input type="radio" id="pt-field-radio-' . $counter . '" name="pt-field-radio-' . $counter . '" class="pt-field pt-field-radio" value="' . $option . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" ' . $required .
+				$html .= '<input type="radio" id="pt-field-radio-' . $pt_counter . '" name="pt-field-radio-' . $pt_counter . '" class="pt-field pt-field-radio" value="' . $option . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" ' . $required .
 				         ( $default == $option ? ' checked="checked"' : ' ' ) . ' >';
 				$html .= '<span>' . ( isset( $option_name ) ? $option_name : $option ) . '</span>';
 				$html .= '</label>';
@@ -1268,12 +1281,12 @@ function pt_field( $attributes ) {
 				break;
 			}
 
-            $ptfg_counter++;
+            $pt_ptfg_counter++;
 			$label    = ( ! empty( $attr['label'] ) ) ? $attr['label'] : 'Options';
 			$options  = ( ! empty( $attr['options'] ) ) ? $attr['options'] : 'No options found.';
 			$options = explode( '/', $options );
 
-			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-checkbox' . $class . '">';
+			$html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-checkbox' . $class . '">';
 			$html .= ( ! empty( $label ) ? '<label for="pt-field-checkbox">' . esc_html($label) . ':</label>' : '' );
 			$html .= '<div class="pt-checkbox-group" data-pt-user-label="'.esc_attr($label).'">';
 
@@ -1283,8 +1296,8 @@ function pt_field( $attributes ) {
 
 				$option = trim( $option );
 
-				$html .= '<label title="'.esc_attr($option).'"><input type="checkbox" id="pt-field-checkbox-' . $counter . '" name="pt-field-checkbox-' . $counter . '[]" class="pt-field pt-field-checkbox" value="' . $option;
-				$html .= '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" data-parsley-multiple="checkbox-'.$ptfg_counter.'" data-parsley-errors-container=".pt-checkbox-group-errors-'.$ptfg_counter.'" " ' . $required;
+				$html .= '<label title="'.esc_attr($option).'"><input type="checkbox" id="pt-field-checkbox-' . $pt_counter . '" name="pt-field-checkbox-' . $pt_counter . '[]" class="pt-field pt-field-checkbox" value="' . $option;
+				$html .= '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" data-parsley-multiple="checkbox-'.$pt_ptfg_counter.'" data-parsley-errors-container=".pt-checkbox-group-errors-'.$pt_ptfg_counter.'" " ' . $required;
 				$html .= ' value="' . $option . '" >';
 
 				$html .= $option;
@@ -1293,7 +1306,7 @@ function pt_field( $attributes ) {
 				$i ++;
 			}
 
-			$html .= '<div class="pt-checkbox-group-errors-'.$ptfg_counter.'"></div>'; //pt-radio-group
+			$html .= '<div class="pt-checkbox-group-errors-'.$pt_ptfg_counter.'"></div>'; //pt-radio-group
 			$html .= '</div>'; //pt-checkbox-group
 			$html .= '</div>'; //pt-form-group
 
@@ -1308,7 +1321,7 @@ function pt_field( $attributes ) {
 				break;
 			}
 
-			$ptfg_counter ++;
+			$pt_ptfg_counter ++;
 			$default           = $attr['default'];
 			$label             = ( ! empty( $attr['label'] ) ) ? $attr['label'] : 'Options';
 			$options           = ( ! empty( $attr['options'] ) ) ? $attr['options'] : 'No options found.';
@@ -1318,9 +1331,9 @@ function pt_field( $attributes ) {
 
 			$has_quantity_class = ( ! empty( $attr['quantity'] ) ) ? ' has-quantity-input' : '';
 
-			$html .= '<div class="pt-form-group pt-form-group-' . $ptfg_counter . ' pt-form-group-field-dropdown' . $has_quantity_class . $class . '">';
+			$html .= '<div class="pt-form-group pt-form-group-' . $pt_ptfg_counter . ' pt-form-group-field-dropdown' . $has_quantity_class . $class . '">';
 			$html .= ( ! empty( $label ) ? '<label for="pt-field-dropdown">' . esc_html($label) . ':</label>' : '' );
-			$html .= '<select id="pt-field-dropdown-' . $counter . '" name="pt-field-dropdown-' . $counter . '" class="pt-form-control pt-field pt-field-dropdown" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" ' . $required . ' data-pt-user-data="' . $user_data . '" >';
+			$html .= '<select id="pt-field-dropdown-' . $pt_counter . '" name="pt-field-dropdown-' . $pt_counter . '" class="pt-form-control pt-field pt-field-dropdown" value="' . $default . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" ' . $required . ' data-pt-user-data="' . $user_data . '" >';
 
 			// Allow users to configure what the first option in an amount dropdown should be
 			// If $first_option is amount, don't show any extra option in the dropdown, otherwise:
@@ -1329,6 +1342,7 @@ function pt_field( $attributes ) {
 			}
 
 			if ( $first_option == 'text' ) {
+				// phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
 				$html .= '<option hidden disabled selected value="' . __( $first_option_text, 'paytium' ) . '" selected>' . $first_option_text . '</option>';
 			}
 
@@ -1352,26 +1366,26 @@ function pt_field( $attributes ) {
 
 		case 'terms':
 
-            $ptfg_counter++;
+            $pt_ptfg_counter++;
 			$label    = ( ! empty( $attr['label'] ) ) ? $attr['label'] : 'Terms & Conditions';
 			$link     = ( ! empty( $attr['link'] ) ) ? $attr['link'] : 'No link found.';
 
 			// Overwrite required for terms, should be required by default unless set to false
 			$required_terms    = ( ( $attr['required'] ) !== 'false' ) ? 'required' : '';
 
-			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-terms' . $class . '">';
+			$html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-terms' . $class . '">';
 
-			$html .= '<input type="checkbox" id="pt-field-checkbox-' . $counter . '" name="pt-field-checkbox-' . $counter . '[]" class="pt-field pt-field-checkbox" value="' . $label . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" ';
+			$html .= '<input type="checkbox" id="pt-field-checkbox-' . $pt_counter . '" name="pt-field-checkbox-' . $pt_counter . '[]" class="pt-field pt-field-checkbox" value="' . $label . '" data-pt-field-type="' . $attr['type'] . '" data-pt-user-label="' . $label . '" data-pt-user-data="' . $user_data . '" ';
 			$html .= $required_terms . ' value="' . $label . '" >';
 
 			if ( $link != 'No link found.') {
-				$html .= '<label for="pt-field-checkbox-' . $counter . '">';
+				$html .= '<label for="pt-field-checkbox-' . $pt_counter . '">';
 				$html .= '<a href="' . $link . '" target="_blank">';
 				$html .= esc_html($label);
 				$html .= '</a>';
 				$html .= '</label>';
 			} else {
-				$html .= '<label for="pt-field-checkbox-' . $counter . '">';
+				$html .= '<label for="pt-field-checkbox-' . $pt_counter . '">';
 				$html .= esc_html($label);
 				$html .= '</label>';
 			}
@@ -1382,7 +1396,7 @@ function pt_field( $attributes ) {
 
         case 'file':
 
-	        $ptfg_counter ++;
+	        $pt_ptfg_counter ++;
 
 	        $allowed_mime_types_media_uploader = get_allowed_mime_types();
 	        $allowed_mime_types                = '';
@@ -1392,7 +1406,8 @@ function pt_field( $attributes ) {
 	        }
 	        $allowed_mime_types = $allowed_file_types ? $allowed_file_types : substr($allowed_mime_types, 0, -1);
 
-	        $html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-upload' . $class . '">';
+	        $html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-upload' . $class . '">';
+	        // phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
 	        $html .= '<label for="pt-paytium-uploaded-file">' . ( ! empty( $label ) ? __(esc_html($label) , 'paytium')  : __('Upload file', 'paytium'));
 	        $html .= ':</label>';
 	        $html .= '<input type="file" id="pt-paytium-uploaded-file" name="pt-paytium-uploaded-file[]" class="pt-paytium-uploaded-file" data-pt-field-type="pt-paytium-uploaded-file"
@@ -1403,41 +1418,43 @@ function pt_field( $attributes ) {
 
 		case 'date':
 
-			$ptfg_counter ++;
+			$pt_ptfg_counter ++;
 
+			// phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
 			$label = ! empty( $label ) ? __(esc_html($label) , 'paytium')  : __('Date', 'paytium');
-			$date_placeholder = ( ! empty( $attr['placeholder'] ) ) ? 'placeholder="' . esc_attr( $attr['placeholder'] ) . '"' : 'placeholder="' . __('Bijvoorbeeld', 'paytium') . ': 31-12-' . date('Y', time()) . '"';
+			$date_placeholder = ( ! empty( $attr['placeholder'] ) ) ? 'placeholder="' . esc_attr( $attr['placeholder'] ) . '"' : 'placeholder="' . __('Bijvoorbeeld', 'paytium') . ': 31-12-' . gmdate('Y', time()) . '"';
 
-			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-date">';
-			$html .= '<label for="pt-field-date-'.$counter.'">' . esc_html($label) . ':</label>';
-			$html .= '<input type="text" id="pt-field-date-'.$counter.'" name="pt-field-date-'.$counter.'" class="pt-paytium-date' . $class . '" data-pt-field-type="' .
-					 $attr['type'] . '" data-pt-user-label="' . $label . '" autocomplete="off" '.$required.'  ' . $date_placeholder  . ' data-parsley-date data-parsley-errors-container="#parsley-errors-list-date-' . $counter . '" />';
-			$html .= '<div id="parsley-errors-list-date-' . $counter . '"></div>';
+			$html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-date">';
+			$html .= '<label for="pt-field-date-'.$pt_counter.'">' . esc_html($label) . ':</label>';
+			$html .= '<input type="text" id="pt-field-date-'.$pt_counter.'" name="pt-field-date-'.$pt_counter.'" class="pt-paytium-date' . $class . '" data-pt-field-type="' .
+					 $attr['type'] . '" data-pt-user-label="' . $label . '" autocomplete="off" '.$required.'  ' . $date_placeholder  . ' data-parsley-date data-parsley-errors-container="#parsley-errors-list-date-' . $pt_counter . '" />';
+			$html .= '<div id="parsley-errors-list-date-' . $pt_counter . '"></div>';
 			$html .= '</div>';
 
 			break;
 
 		case 'birthday':
 
-			$ptfg_counter ++;
+			$pt_ptfg_counter ++;
 
+			// phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
 			$label = ! empty( $label ) ? __(esc_html($label) , 'paytium')  : __('Date', 'paytium');
-			$date_placeholder = ( ! empty( $attr['placeholder'] ) ) ? 'placeholder="' . esc_attr( $attr['placeholder'] ) . '"' : 'placeholder="' . __('Bijvoorbeeld', 'paytium') . ': 31-12-' . date('Y', time()) . '"';
+			$date_placeholder = ( ! empty( $attr['placeholder'] ) ) ? 'placeholder="' . esc_attr( $attr['placeholder'] ) . '"' : 'placeholder="' . __('Bijvoorbeeld', 'paytium') . ': 31-12-' . gmdate('Y', time()) . '"';
 
-			$html .= '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-field-birthday' . $class . '">';
-			$html .= '<label for="pt-field-birthday-'.$counter.'">' . esc_html($label) . ':</label>';
-			$html .= '<input type="text" id="pt-field-birthday-'.$counter.'" name="pt-field-birthday-'.$counter.'" class="pt-paytium-birthday" data-pt-field-type="' .
-			         $attr['type'] . '" data-pt-user-label="' . $label . '" autocomplete="off" '.$required.'  ' . $date_placeholder  . ' data-parsley-date data-parsley-errors-container="#parsley-errors-list-date-' . $counter . '" />';
-			$html .= '<div id="parsley-errors-list-date-' . $counter . '"></div>';
+			$html .= '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-field-birthday' . $class . '">';
+			$html .= '<label for="pt-field-birthday-'.$pt_counter.'">' . esc_html($label) . ':</label>';
+			$html .= '<input type="text" id="pt-field-birthday-'.$pt_counter.'" name="pt-field-birthday-'.$pt_counter.'" class="pt-paytium-birthday" data-pt-field-type="' .
+			         $attr['type'] . '" data-pt-user-label="' . $label . '" autocomplete="off" '.$required.'  ' . $date_placeholder  . ' data-parsley-date data-parsley-errors-container="#parsley-errors-list-date-' . $pt_counter . '" />';
+			$html .= '<div id="parsley-errors-list-date-' . $pt_counter . '"></div>';
 			$html .= '</div>';
 
 			break;
 
 	}
 
-	$args = pt_get_args( '', $attr, $counter );
+	$args = pt_get_args( '', $attr, $pt_counter );
 
-	$counter++;
+	$pt_counter++;
 
 	return apply_filters( 'pt_paytium_field', $html, $args );
 
@@ -1456,7 +1473,7 @@ function pt_button( $attributes ) {
 		return;
 	}
 
-	global $counter;
+	global $pt_counter;
 
 	if (!empty($attributes)) {
 		foreach ($attributes as $key => $attribute) {
@@ -1472,11 +1489,11 @@ function pt_button( $attributes ) {
 
 	extract( $attr );
 
-	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_button_' . $counter, 'paytium_button', $attr, false );
+	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_button_' . $pt_counter, 'paytium_button', $attr, false );
 
 	$html = '';
 
-	$args = pt_get_args( '', $attr, $counter );
+	$args = pt_get_args( '', $attr, $pt_counter );
 
 	// Add a filter here to allow developers to hook into the form
 	$filter_html = '';
@@ -1484,7 +1501,7 @@ function pt_button( $attributes ) {
 
 	// Payment button.
 	$html .= '<button class="pt-payment-btn ' . $class . '"' . (!empty($style) ? ' style="' . $style . '" ' : '') . '><span>' . esc_html($label) . '</span></button>';
-	$counter++;
+	$pt_counter++;
 
 	return apply_filters( 'pt_paytium_button', $html, $args );
 
@@ -1502,10 +1519,10 @@ function pt_uea_amount( $attr ) {
 		return;
 	}
 
-	global $counter, $ptfg_counter, $limit_data, $pt_id, $form_currency;
-    $ptfg_counter++;
+	global $pt_counter, $pt_ptfg_counter, $pt_limit_data, $pt_id, $pt_form_currency;
+    $pt_ptfg_counter++;
 
-	$currency = is_file( PT_PATH . 'features/currency.php' ) ? get_paytium_currency_symbol($form_currency[$pt_id]) : '€';
+	$currency = is_file( PT_PATH . 'features/currency.php' ) ? get_paytium_currency_symbol($pt_form_currency[$pt_id]) : '€';
 	$currency_symbol_after = $currency == 'NOK' || $currency == 'SEK' || $currency == 'fr.';
 
 	if (!empty($attr)) {
@@ -1537,18 +1554,18 @@ function pt_uea_amount( $attr ) {
 
 	extract( $attr );
 
-	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_amount_' . $counter, 'paytium_amount', $attr, false );
+	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_amount_' . $pt_counter, 'paytium_amount', $attr, false );
 
 	$currency_class = $currency_symbol_after ? ' currency-after-amount' : '';
 
 	$html = '';
-	$html .= ( ! empty( $label ) ? '<label for="pt_uea_custom_amount_' . $counter . '">' . esc_html($label) . '</label>' : '' );
+	$html .= ( ! empty( $label ) ? '<label for="pt_uea_custom_amount_' . $pt_counter . '">' . esc_html($label) . '</label>' : '' );
 	$html .= '<div class="pt-uea-container pt-uea-container-with-prepend"><div class="pt-uea-container-amount">';
 	$html .= '<div class="pt-uea-currency-prepend'.$currency_class.'">';
 	$html .= '<span class="pt-uea-currency pt-uea-currency-before">'.$currency.'</span> ';
 	$html .= '</div> ';
 
-	$id = 'pt_items[' . absint( $counter ) . ']';
+	$id = 'pt_items[' . absint( $pt_counter ) . ']';
 
 	// Include inline Parsley JS validation data attributes.
 	// http://parsleyjs.org/doc/index.html#psly-validators-list
@@ -1558,20 +1575,20 @@ function pt_uea_amount( $attr ) {
 	    // Collect all amounts so we can store them later for server side validation
 	    pt_paytium_collect_amounts( $minimum );
 
-        $html .= 'id="pt_uea_custom_amount_' . $counter . '" value="' . esc_attr($default) . '" parsley-type="number" data-parsley-open="' . $minimum . '" placeholder="' . esc_attr($placeholder) . '" ';
+        $html .= 'id="pt_uea_custom_amount_' . $pt_counter . '" value="' . esc_attr($default) . '" parsley-type="number" data-parsley-open="' . $minimum . '" placeholder="' . esc_attr($placeholder) . '" ';
     }
     else {
 
 	    // Collect all amounts so we can store them later for server side validation
 	    pt_paytium_collect_amounts( '0.99' );
 
-        $html .= 'id="pt_uea_custom_amount_' . $counter . '" value="' . esc_attr($default) . '" parsley-type="number"  data-parsley-open="1" placeholder="' . esc_attr($placeholder) . '" ';
+        $html .= 'id="pt_uea_custom_amount_' . $pt_counter . '" value="' . esc_attr($default) . '" parsley-type="number"  data-parsley-open="1" placeholder="' . esc_attr($placeholder) . '" ';
     }
 	// Point to custom container for errors so we can place the non-USD currencies on the right of the input box.
-	$html .= 'data-parsley-errors-container="#pt_uea_custom_amount_errors_' . $counter . '" data-pt-price="' . esc_attr($default) . '">';
+	$html .= 'data-parsley-errors-container="#pt_uea_custom_amount_errors_' . $pt_counter . '" data-pt-price="' . esc_attr($default) . '">';
     $html .= '</div>';
 
-	$paytium_item_limits = unserialize(get_option('paytium_item_limits'));
+	$paytium_item_limits = pt_unserialize_to_array(get_option('paytium_item_limits'));
 	if (!empty($paytium_item_limits) && !empty($limit) && !empty($item_id)) {
 		if ( isset($paytium_item_limits[sanitize_key($item_id)])) {
 			$items_left = (int)$limit - $paytium_item_limits[sanitize_key($item_id)];
@@ -1606,47 +1623,49 @@ function pt_uea_amount( $attr ) {
 	$html .= '<input type="hidden" name="' . $id . '[type]" value="open">';
 
 	if (!empty($crowdfunding_id)) {
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][crowdfunding_id]" value="' . $crowdfunding_id . '" data-pt-user-label="Crowdfunding ID" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][crowdfunding_id]" value="' . $crowdfunding_id . '" data-pt-user-label="Crowdfunding ID" />';
 	}
 
     if (!empty($limit) && !empty($limit_message) && !empty($item_id)) {
 
-	    $html .= '<input type="hidden" name="pt_items[' . $counter . '][item_id]" value="' . $item_id . '" data-pt-user-label="Item ID" />';
-	    $html .= '<input type="hidden" name="pt_items[' . $counter . '][limit]" value="' . $limit . '" data-pt-user-label="Limit" />';
-	    $html .= '<input type="hidden" name="pt_items[' . $counter . '][limit-message]" value="' . $limit_message . '" data-pt-user-label="Limit Message" />';
+	    $html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][item_id]" value="' . $item_id . '" data-pt-user-label="Item ID" />';
+	    $html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][limit]" value="' . $limit . '" data-pt-user-label="Limit" />';
+	    $html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][limit-message]" value="' . $limit_message . '" data-pt-user-label="Limit Message" />';
 
-        $limit_data['limits'][$item_id] = 0;
+        $pt_limit_data['limits'][$item_id] = 0;
 
         if (get_option('paytium_item_limits')) {
 
-            $paytium_item_limits = unserialize(get_option('paytium_item_limits'));
+            $paytium_item_limits = pt_unserialize_to_array(get_option('paytium_item_limits'));
 
             if (array_key_exists(sanitize_key($item_id), $paytium_item_limits) && $paytium_item_limits[sanitize_key($item_id)] >= (int)$limit) {
 
-                $limit_data['limits'][$item_id] = $limit_message;
+                $pt_limit_data['limits'][$item_id] = $limit_message;
+                // phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
                 $html = '<div class="pt-form-alert">' . __($limit_message, 'paytium') . '</div>';
 
             } else {
 	            $html .= '</div>';
-                $html .= '<div id="pt_uea_custom_amount_errors_' . $counter . '"></div>';
+                $html .= '<div id="pt_uea_custom_amount_errors_' . $pt_counter . '"></div>';
 
 				$show_items_left_only_for_admin = filter_var($show_items_left_only_for_admin, FILTER_VALIDATE_BOOLEAN);
 
 				if ( $show_items_left !== 'false' && isset($items_left) && $items_left < $show_items_left_after &&
 					(($show_items_left_only_for_admin && current_user_can('administrator')) || (!$show_items_left_only_for_admin))) {
 
+					/* translators: %1$s: number of items still available. */
 					$html .= '<p class="pt-items-left">'.sprintf(__('Only %s left!','paytium'), $items_left).'</p>';
 				}
             }
         }
         else {
 			$html .= '</div>';
-			$html .= '<div id="pt_uea_custom_amount_errors_' . $counter . '"></div>';
+			$html .= '<div id="pt_uea_custom_amount_errors_' . $pt_counter . '"></div>';
 		}
 
 		if (function_exists('pt_paytium_general_limit_reached') && !empty($general_item_id) && !empty($general_limit)) {
-			$html .= '<input type="hidden" name="pt_items[' . $counter . '][general_limit]" value="' . $general_limit . '" data-pt-user-label="General Limit" />';
-			$html .= '<input type="hidden" name="pt_items[' . $counter . '][general_item_id]" value="' . $general_item_id . '" data-pt-user-label="General Item ID" />';
+			$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][general_limit]" value="' . $general_limit . '" data-pt-user-label="General Limit" />';
+			$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][general_item_id]" value="' . $general_item_id . '" data-pt-user-label="General Item ID" />';
 			if ($paytium_item_limits && $paytium_item_limits && pt_paytium_general_limit_reached($general_item_id,$general_limit,$paytium_item_limits)) {
 				$html = '';
 			}
@@ -1656,24 +1675,24 @@ function pt_uea_amount( $attr ) {
 	    // Custom validation errors container for UEA.
 	    // Needs counter ID specificity to match input above.
 	    $html .= '</div>'; //pt-uea-container
-	    $html .= '<div id="pt_uea_custom_amount_errors_' . $counter . '"></div>';
+	    $html .= '<div id="pt_uea_custom_amount_errors_' . $pt_counter . '"></div>';
     }
 
 	if (function_exists('pt_paytium_general_limit_reached') && !empty($general_item_id) && !empty($general_limit)) {
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][general_limit]" value="' . $general_limit . '" data-pt-user-label="General Limit" />';
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][general_item_id]" value="' . $general_item_id . '" data-pt-user-label="General Item ID" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][general_limit]" value="' . $general_limit . '" data-pt-user-label="General Limit" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][general_item_id]" value="' . $general_item_id . '" data-pt-user-label="General Item ID" />';
 		if (empty($limit) && !empty($item_id)) {
-			$html .= '<input type="hidden" name="pt_items[' . $counter . '][item_id]" value="' . $item_id . '" data-pt-user-label="Item ID" />';
+			$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][item_id]" value="' . $item_id . '" data-pt-user-label="Item ID" />';
 		}
 		if ($paytium_item_limits && pt_paytium_general_limit_reached($general_item_id,$general_limit,$paytium_item_limits)) {
 			$html = '';
 		}
 	}
 
-	$args = pt_get_args( '', $attr, $counter );
-	$counter++;
+	$args = pt_get_args( '', $attr, $pt_counter );
+	$pt_counter++;
 
-	return '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-uea-custom-amount '. $has_quantity_class . '">' . apply_filters( 'pt_paytium_amount', $html, $args ) . '</div>';
+	return '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-uea-custom-amount '. $has_quantity_class . '">' . apply_filters( 'pt_paytium_amount', $html, $args ) . '</div>';
 
 }
 add_shortcode( 'paytium_amount', 'pt_uea_amount' );
@@ -1690,10 +1709,10 @@ function pt_cf_dropdown( $attr ) {
 		return;
 	}
 
-    global $counter, $ptfg_counter, $limit_data, $pt_id, $form_currency;
-	$ptfg_counter++;
+    global $pt_counter, $pt_ptfg_counter, $pt_limit_data, $pt_id, $pt_form_currency;
+	$pt_ptfg_counter++;
 
-	$currency = is_file( PT_PATH . 'features/currency.php' ) ? get_paytium_currency_symbol($form_currency[$pt_id]) : '€';
+	$currency = is_file( PT_PATH . 'features/currency.php' ) ? get_paytium_currency_symbol($pt_form_currency[$pt_id]) : '€';
 	$currency_symbol_after = $currency == 'NOK' || $currency == 'SEK' || $currency == 'fr.';
 
 	global $pt_script_options;
@@ -1732,9 +1751,9 @@ function pt_cf_dropdown( $attr ) {
 
 	extract( $attr );
 
-	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_dropdown_' . $counter, 'paytium_dropdown', $attr, false );
+	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_dropdown_' . $pt_counter, 'paytium_dropdown', $attr, false );
 
-	$id = 'pt_items[' . absint( $counter ) . ']';
+	$id = 'pt_items[' . absint( $pt_counter ) . ']';
 
 	$required = ( ( $attr['required'] ) == 'true' ) ? 'required' : '';
 
@@ -1839,6 +1858,7 @@ function pt_cf_dropdown( $attr ) {
 	}
 
 	if ( $first_option == 'text' ) {
+		// phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
 		$html .= '<option hidden disabled selected value="' . __( $first_option_text, 'paytium' ) . '" selected>' . $first_option_text . '</option>';
 	}
 
@@ -1872,7 +1892,7 @@ function pt_cf_dropdown( $attr ) {
 
         if (isset($item_ids) && isset($item_limits)) {
 
-            $paytium_item_limits = unserialize(get_option('paytium_item_limits'));
+            $paytium_item_limits = pt_unserialize_to_array(get_option('paytium_item_limits'));
 
             if (get_option('paytium_item_limits') && array_key_exists(sanitize_key($item_ids[$i - 1]), $paytium_item_limits)
                 && $paytium_item_limits[sanitize_key($item_ids[$i - 1])] >= (int)$item_limits[$i - 1]) {
@@ -1882,6 +1902,7 @@ function pt_cf_dropdown( $attr ) {
 					$g++;
 				}
 				else {
+					// phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
 					$html .= '<option class="pt-option-disabled" value="' . $value . '" data-pt-price="' . esc_attr($value) . '" disabled>' . (isset($option_name) ? $option_name : $option) . ' (' . __($limit_message, 'paytium') . ')</option>';
 				}
 
@@ -1896,6 +1917,7 @@ function pt_cf_dropdown( $attr ) {
 
 		            $items_left_text = $show_items_left !== 'false' && isset($items_left) && $items_left < $show_items_left_after &&
 										(($show_items_left_only_for_admin && current_user_can('administrator')) || (!$show_items_left_only_for_admin)) ?
+										/* translators: %1$s: number of items still available. */
 										'(' . sprintf(__('Only %s left!','paytium'), $items_left) . ')' :
 										'';
 	            } else {
@@ -1971,28 +1993,29 @@ function pt_cf_dropdown( $attr ) {
 	}
 
 	if (!empty($crowdfunding_id)) {
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][crowdfunding_id]" value="' . $crowdfunding_id . '" data-pt-user-label="Crowdfunding ID" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][crowdfunding_id]" value="' . $crowdfunding_id . '" data-pt-user-label="Crowdfunding ID" />';
 	}
 
-    $args = pt_get_args($id, $attr, $counter);
+    $args = pt_get_args($id, $attr, $pt_counter);
 
-	$counter++;
+	$pt_counter++;
 
 	if ($i == $k && $i != $g) {
-        $limit_data['limits'][$item_id] = $limit_message;
+        $pt_limit_data['limits'][$item_id] = $limit_message;
         if ($options_are_amounts == 'true' || !empty($amounts)) {
-            if(isset($limit_data['amount_count'])) {
-                $limit_data['amount_count']++;
+            if(isset($pt_limit_data['amount_count'])) {
+                $pt_limit_data['amount_count']++;
             }
-            else $limit_data['amount_count'] = 1;
+            else $pt_limit_data['amount_count'] = 1;
         }
+        // phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
         $html = '<div class="pt-form-alert">' . __($limit_message, 'paytium') . '</div>';
     }
 	elseif ($i == $g) {
 		$html = '';
 	}
 
-    return '<div class="pt-form-group pt-form-group-' . $ptfg_counter . ' pt-form-group-dropdown ' . $has_quantity_class . '">' . apply_filters('pt_paytium_dropdown', $html, $args) . '</div>';
+    return '<div class="pt-form-group pt-form-group-' . $pt_ptfg_counter . ' pt-form-group-dropdown ' . $has_quantity_class . '">' . apply_filters('pt_paytium_dropdown', $html, $args) . '</div>';
 
 }
 add_shortcode( 'paytium_dropdown', 'pt_cf_dropdown' );
@@ -2008,8 +2031,8 @@ function pt_subscription( $attr ) {
 		return;
 	}
 
-	global $counter, $ptfg_counter, $form_currency, $pt_id;
-	$ptfg_counter++;
+	global $pt_counter, $pt_ptfg_counter, $pt_form_currency, $pt_id;
+	$pt_ptfg_counter++;
 
 	if (!empty($attr)) {
 		foreach ($attr as $key => $attribute) {
@@ -2017,7 +2040,7 @@ function pt_subscription( $attr ) {
 		}
 	}
 
-	$currency = is_file( PT_PATH . 'features/currency.php' ) ? get_paytium_currency_symbol($form_currency[$pt_id]) : '€';
+	$currency = is_file( PT_PATH . 'features/currency.php' ) ? get_paytium_currency_symbol($pt_form_currency[$pt_id]) : '€';
 	$currency_symbol_after = $currency == 'NOK' || $currency == 'SEK' || $currency == 'fr.';
 
 	$attr = shortcode_atts( array (
@@ -2037,7 +2060,7 @@ function pt_subscription( $attr ) {
 
 	extract( $attr );
 
-	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_subscription_' . $counter, 'paytium_subscription', $attr, false );
+	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_subscription_' . $pt_counter, 'paytium_subscription', $attr, false );
 
 	$interval                     = ( ! empty( $attr['interval'] ) ) ? $attr['interval'] : '';
 	$interval_options             = ( ! empty( $attr['interval_options'] ) ) ? explode( ',', $attr['interval_options'] ) : '';
@@ -2074,7 +2097,7 @@ function pt_subscription( $attr ) {
 	// Allow customers to choose if they want a recurring payment or not
 	if ( $optional ) {
 
-		$html .= '<div class="pt-form-group pt-form-group-' . $ptfg_counter . ' pt-form-group-subscription-optional">';
+		$html .= '<div class="pt-form-group pt-form-group-' . $pt_ptfg_counter . ' pt-form-group-subscription-optional">';
 
 		$html .= ( ! empty( $optional_label ) ? '<label id="pt-cf-radio-label pt-subscription-optional">' . $optional_label . '</label>' : '' );
 		$html .= '<div class="pt-radio-group pt-subscription-optional">';
@@ -2105,7 +2128,7 @@ function pt_subscription( $attr ) {
 	// Process interval options if any are found
 	if ( ! empty( $interval_options ) ) {
 
-		$html .= '<div class="pt-form-group pt-form-group-' . $ptfg_counter . ' pt-form-group-subscription-interval">';
+		$html .= '<div class="pt-form-group pt-form-group-' . $pt_ptfg_counter . ' pt-form-group-subscription-interval">';
 
 		$html .= ( ! empty( $interval_label ) ? '<label id="pt-cf-radio-label pt-subscription-interval-options-label">' . $interval_label . ':</label>' : '' );
 		$html .= '<div class="pt-radio-group pt-subscription-interval-options">';
@@ -2126,10 +2149,16 @@ function pt_subscription( $attr ) {
 			//	continue;
 			//}
 
-			// Collect all amounts so we can store them later for server side validation
-			pt_paytium_collect_amounts( $interval_amounts[ $amounts_counter ] );
+			// The guard above is disabled deliberately, so an option can exist without a
+			// matching amount (the customer enters their own). Read the index once and
+			// defensively - it is legitimately absent, and '' behaves exactly as the
+			// previous undefined-index null did in all three uses below.
+			$interval_amount = isset( $interval_amounts[ $amounts_counter ] ) ? $interval_amounts[ $amounts_counter ] : '';
 
-			$option_amount = !empty($interval_amounts[0]) ? ' - '. ($currency_symbol_after ? $interval_amounts[$amounts_counter] . ' ' . $currency : $currency . ' ' . $interval_amounts[$amounts_counter]) : '';
+			// Collect all amounts so we can store them later for server side validation
+			pt_paytium_collect_amounts( $interval_amount );
+
+			$option_amount = !empty($interval_amounts[0]) ? ' - '. ($currency_symbol_after ? $interval_amount . ' ' . $currency : $currency . ' ' . $interval_amount) : '';
 
 			// Convert interval options to nicer "human friendly" versions, e.g. 1 month becomes Monthly
 			if ( ( $option == 'once' || $option == 'eenmalig' ) ) {
@@ -2140,11 +2169,17 @@ function pt_subscription( $attr ) {
 				$option = __( 'Yearly', 'paytium' );
 			} elseif ( ( $option !== 'once' && $option !== 'eenmalig' ) ) {
 				$option_split = explode( ' ', $option );
-				$option       = sprintf( _n( '%s ' . trim( $option_split[1], 's' ), '%s ' . $option_split[1], $option_split[0] ), $option_split[0] );
+				// A single-word custom interval (e.g. "monthly") has no [1], which warned
+				// twice per render. '' gives the same output the undefined index did.
+				$option_count = isset( $option_split[0] ) ? $option_split[0] : '';
+				$option_unit  = isset( $option_split[1] ) ? $option_split[1] : '';
+				/* translators: %1$s: $option_split[0]. */
+				// phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
+				$option       = sprintf( _n( '%s ' . trim( $option_unit, 's' ), '%s ' . $option_unit, $option_count ), $option_count );
 			}
 
 			// Don't use built-in checked() function here for now since we need "checked" in double quotes.
-			$option_html .= '<input type="radio" name="pt-subscription-interval-options" value="' . $value . '" data-pt-label="' . $option . '" data-pt-price="' . pt_user_amount_to_float( $interval_amounts[ $amounts_counter ] ) . '"' . checked( $interval, $option, false ) .
+			$option_html .= '<input type="radio" name="pt-subscription-interval-options" value="' . $value . '" data-pt-label="' . $option . '" data-pt-price="' . pt_user_amount_to_float( $interval_amount ) . '"' . checked( $interval, $option, false ) .
 			                ' class="pt-subscription-interval-options" data-parsley-errors-container=".pt-form-group" required>';
 
 			$option_html .= '<span>' . esc_attr( $option ) . $option_amount . '</span>';
@@ -2166,10 +2201,10 @@ function pt_subscription( $attr ) {
 	// If there are interval amounts, add fields where we shall store the selected data as payment items
 	if ( ! empty( $interval_amounts ) ) {
 		$html .= '<input type="hidden" id="pt-subscription-custom-amount" name="pt-subscription-custom-amount" class="pt-subscription-custom-amount pt-paid-field" value="" data-pt-field-type="pt-subscription-custom-amount" data-pt-price="" />';
-		$html .= '<input type="hidden" id="pt-subscription-custom-value" class="pt-subscription-custom-amount" name="pt_items[' . $counter . '][value]" value="' . $interval_amounts[0] . '" disabled>';
-		$html .= '<input type="hidden" class="pt-subscription-custom-amount" name="pt_items[' . $counter . '][amount]" value="' . pt_user_amount_to_float( $interval_amounts[0] ) . '" disabled>';
-		$html .= '<input type="hidden" class="pt-subscription-custom-amount" name="pt_items[' . $counter . '][tax_percentage]" value="' . floatval( $tax ) . '" disabled>';
-		$html .= '<input type="hidden" class="pt-subscription-custom-amount" name="pt_items[' . $counter . '][type]" value="label" disabled>';
+		$html .= '<input type="hidden" id="pt-subscription-custom-value" class="pt-subscription-custom-amount" name="pt_items[' . $pt_counter . '][value]" value="' . $interval_amounts[0] . '" disabled>';
+		$html .= '<input type="hidden" class="pt-subscription-custom-amount" name="pt_items[' . $pt_counter . '][amount]" value="' . pt_user_amount_to_float( $interval_amounts[0] ) . '" disabled>';
+		$html .= '<input type="hidden" class="pt-subscription-custom-amount" name="pt_items[' . $pt_counter . '][tax_percentage]" value="' . floatval( $tax ) . '" disabled>';
+		$html .= '<input type="hidden" class="pt-subscription-custom-amount" name="pt_items[' . $pt_counter . '][type]" value="label" disabled>';
 
 		$html .= '<input type="hidden" class="pt-subscription-interval-amounts-list" name="pt-subscription-interval-amounts-list" value="'.$attr['interval_amounts'].'">';
 	}
@@ -2179,9 +2214,9 @@ function pt_subscription( $attr ) {
 		$html .= '<input type="hidden" id="pt-subscription-start-date" name="pt-subscription-start-date" class="pt-subscription-start-date" value="' . $start_date . '" data-pt-field-type="pt-subscription-start-date" />';
 	}
 
-	$args = pt_get_args( '', $attr, $counter );
+	$args = pt_get_args( '', $attr, $pt_counter );
 
-	$counter++; // Increment static counter
+	$pt_counter++; // Increment static counter
 
 	return apply_filters( 'pt_subscription', $html, $args );
 
@@ -2199,8 +2234,8 @@ function pt_cf_radio( $attr ) {
 		return;
 	}
 
-    global $counter, $ptfg_counter, $limit_data, $pt_id, $form_currency;
-	$ptfg_counter++;
+    global $pt_counter, $pt_ptfg_counter, $pt_limit_data, $pt_id, $pt_form_currency;
+	$pt_ptfg_counter++;
 
 	if (!empty($attr)) {
 		foreach ($attr as $key => $attribute) {
@@ -2208,7 +2243,7 @@ function pt_cf_radio( $attr ) {
 		}
 	}
 
-	$currency = is_file( PT_PATH . 'features/currency.php' ) ? get_paytium_currency_symbol($form_currency[$pt_id]) : '€';
+	$currency = is_file( PT_PATH . 'features/currency.php' ) ? get_paytium_currency_symbol($pt_form_currency[$pt_id]) : '€';
 	$currency_symbol_after = $currency == 'NOK' || $currency == 'SEK' || $currency == 'fr.';
 
 	$attr = shortcode_atts(array(
@@ -2237,9 +2272,9 @@ function pt_cf_radio( $attr ) {
 
 	extract( $attr );
 
-	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_radio_' . $counter, 'paytium_radio', $attr, false );
+	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_radio_' . $pt_counter, 'paytium_radio', $attr, false );
 
-	$id = 'pt_items[' . absint( $counter ) . ']';
+	$id = 'pt_items[' . absint( $pt_counter ) . ']';
 
 	$options = explode( '/', $options );
 
@@ -2362,7 +2397,7 @@ function pt_cf_radio( $attr ) {
 
         if (isset($item_ids) && isset($item_limits)) {
 
-            $paytium_item_limits = unserialize(get_option('paytium_item_limits'));
+            $paytium_item_limits = pt_unserialize_to_array(get_option('paytium_item_limits'));
 
             if (get_option('paytium_item_limits') && array_key_exists(sanitize_key($item_ids[$i - 1]), $paytium_item_limits)
                 && $paytium_item_limits[sanitize_key($item_ids[$i - 1])] >= (int)$item_limits[$i - 1]
@@ -2374,8 +2409,10 @@ function pt_cf_radio( $attr ) {
 				}
 				else {
 					$option_html .= '<input type="radio" name="' . esc_attr($id) . '[amount]" disabled>';
+					// phpcs:disable WordPress.WP.I18n.NonSingularStringLiteralText -- runtime value, not an extractable literal; see completed_work.txt.
 					$option_html .= '<span class="pt-option-disabled">' . (isset($option_name) ? $option_name : $option) . '</span>
                                     <span>(' . __($limit_message, 'paytium') . ')</span>';
+					// phpcs:enable WordPress.WP.I18n.NonSingularStringLiteralText
 				}
                 $k++;
             } else {
@@ -2396,6 +2433,7 @@ function pt_cf_radio( $attr ) {
 				if ( $show_items_left !== 'false' && isset($items_left) && $items_left < $show_items_left_after &&
 					(($show_items_left_only_for_admin && current_user_can('administrator')) || (!$show_items_left_only_for_admin))) {
 
+					/* translators: %1$s: number of items still available. */
 					$option_html .= '<p class="pt-items-left">'.sprintf(__('Only %s left!','paytium'), $items_left).'</p>';
 				}
 
@@ -2479,30 +2517,31 @@ function pt_cf_radio( $attr ) {
 	}
 
 	if (!empty($crowdfunding_id)) {
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][crowdfunding_id]" value="' . $crowdfunding_id . '" data-pt-user-label="Crowdfunding ID" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][crowdfunding_id]" value="' . $crowdfunding_id . '" data-pt-user-label="Crowdfunding ID" />';
 	}
 
 	$html .= '</div>'; //pt-radio-group
 
-	$args = pt_get_args( $id, $attr, $counter );
+	$args = pt_get_args( $id, $attr, $pt_counter );
 
-	$counter++;
+	$pt_counter++;
 
 	if ($i == $k && $i != $g) {
-		$limit_data['limits'][$item_id] = $limit_message;
+		$pt_limit_data['limits'][$item_id] = $limit_message;
         if ($options_are_amounts == 'true' || !empty($amounts)) {
-            if(isset($limit_data['amount_count'])) {
-                $limit_data['amount_count']++;
+            if(isset($pt_limit_data['amount_count'])) {
+                $pt_limit_data['amount_count']++;
             }
-            else $limit_data['amount_count'] = 1;
+            else $pt_limit_data['amount_count'] = 1;
         }
+        // phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
         $html = '<div class="pt-form-alert">' . __($limit_message, 'paytium') . '</div>';
     }
     elseif ($i == $g) {
 		$html = '';
 	}
 
-    return '<div class="pt-form-group pt-form-group-' . $ptfg_counter . ' pt-form-group-radio ' . $has_quantity_class . '">' . apply_filters('pt_paytium_radio', $html, $args) . '</div>';
+    return '<div class="pt-form-group pt-form-group-' . $pt_ptfg_counter . ' pt-form-group-radio ' . $has_quantity_class . '">' . apply_filters('pt_paytium_radio', $html, $args) . '</div>';
 
 }
 add_shortcode( 'paytium_radio', 'pt_cf_radio' );
@@ -2519,8 +2558,8 @@ function pt_cf_label( $attr ) {
 		return;
 	}
 
-	global $counter, $ptfg_counter, $limit_data, $pt_id, $form_currency;
-	$ptfg_counter++;
+	global $pt_counter, $pt_ptfg_counter, $pt_limit_data, $pt_id, $pt_form_currency;
+	$pt_ptfg_counter++;
 
 	if (!empty($attr)) {
 		foreach ($attr as $key => $attribute) {
@@ -2554,7 +2593,7 @@ function pt_cf_label( $attr ) {
 
 	extract( $attr );
 
-	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_label_' . $counter, 'paytium_label', $attr, false );
+	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_label_' . $pt_counter, 'paytium_label', $attr, false );
 
 	$multiplied_by_data = '';
 
@@ -2568,14 +2607,14 @@ function pt_cf_label( $attr ) {
 	$general_limit_class = !empty($general_item_id) && !empty($general_limit) && empty($limit) && empty($quantity) ? 'general-limit-item' : '';
 	$class .= $general_limit_class;
 
-	$id = 'pt_items[' . absint( $counter ) . ']';
+	$id = 'pt_items[' . absint( $pt_counter ) . ']';
 	$html = ( ! empty( $attr['label'] ) ? '<label for="' . esc_attr( $id ) . '[value]"'. $multiplied_by_data .$class.'>' . wp_kses_post( $attr['label'] ) . '</label>' : '' );
 
 	if ( ! empty( $limit ) ) {
 		$items_left = $limit;
 	}
 
-	$paytium_item_limits = unserialize(get_option('paytium_item_limits'));
+	$paytium_item_limits = pt_unserialize_to_array(get_option('paytium_item_limits'));
 	if (!empty($paytium_item_limits) && !empty($limit) && !empty($item_id) && array_key_exists(sanitize_key($item_id), $paytium_item_limits) ) {
 		$items_left = (int)$limit - $paytium_item_limits[sanitize_key($item_id)];
 		if (!empty($quantity_max) && $quantity_max > $items_left) $quantity_max = $items_left;
@@ -2619,7 +2658,7 @@ function pt_cf_label( $attr ) {
 	}
 
 	if(!empty($show_amount)){
-		$html .= '<div class="pt-quantity-amount">'.pt_float_amount_to_currency($amount, $form_currency[$pt_id]) . '</div>';
+		$html .= '<div class="pt-quantity-amount">'.pt_float_amount_to_currency($amount, $pt_form_currency[$pt_id]) . '</div>';
 	}
 
 	$zero_tax = !empty($add_zero_tax) && $add_zero_tax == 'true';
@@ -2631,26 +2670,26 @@ function pt_cf_label( $attr ) {
 		// Collect all amounts so we can store them later for server side validation
 		pt_paytium_collect_amounts( $amount );
 
-		if (isset($limit_data['amount_count'])) {
-			$limit_data['amount_count']++;
+		if (isset($pt_limit_data['amount_count'])) {
+			$pt_limit_data['amount_count']++;
 		}
-		else $limit_data['amount_count'] = 1;
+		else $pt_limit_data['amount_count'] = 1;
 		$html .= '<input type="hidden" class="pt-cf-amount pt-cf-label-amount ' . $has_quantity_class . $zero_tax_class . '" name="' . esc_attr($id) . '[amount]" value="' . pt_user_amount_to_float($attr['amount']) . '" ' . 'data-pt-price="' . pt_user_amount_to_float($attr['amount']) . '" />';
 		$html .= '<input type="hidden" name="' . $id . '[tax_percentage]" value="' . floatval($attr['tax']) . '">';
 	}
 
 	if (!empty($crowdfunding_id)) {
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][crowdfunding_id]" value="' . $crowdfunding_id . '" data-pt-user-label="Crowdfunding ID" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][crowdfunding_id]" value="' . $crowdfunding_id . '" data-pt-user-label="Crowdfunding ID" />';
 	}
 
-	$args = pt_get_args( $id, $attr, $counter );
+	$args = pt_get_args( $id, $attr, $pt_counter );
 
 	if (!empty($limit) && !empty($limit_message) && !empty($item_id)) {
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][item_id]" value="' . $item_id . '" data-pt-user-label="Item ID" />';
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][limit]" value="' . $limit . '" data-pt-user-label="Limit" />';
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][limit-message]" value="' . $limit_message . '" data-pt-user-label="Limit Message" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][item_id]" value="' . $item_id . '" data-pt-user-label="Item ID" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][limit]" value="' . $limit . '" data-pt-user-label="Limit" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][limit-message]" value="' . $limit_message . '" data-pt-user-label="Limit Message" />';
 
-		$limit_data['limits'][$item_id] = 0;
+		$pt_limit_data['limits'][$item_id] = 0;
 
 		if (get_option('paytium_item_limits')) {
 
@@ -2658,21 +2697,23 @@ function pt_cf_label( $attr ) {
 
 			if (array_key_exists(sanitize_key($item_id), $paytium_item_limits) && $paytium_item_limits[sanitize_key($item_id)] >= (int)$limit) {
 
-				$limit_data['limits'][$item_id] = $limit_message;
+				$pt_limit_data['limits'][$item_id] = $limit_message;
+				// phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
 				$html = '<div class="pt-form-alert">' . __($limit_message, 'paytium') . '</div>';
 			}
 			elseif ( $show_items_left !== 'false' && isset($items_left) && $items_left < $show_items_left_after &&
 				(($show_items_left_only_for_admin && current_user_can('administrator')) || (!$show_items_left_only_for_admin)) ) {
+				/* translators: %1$s: number of items still available. */
 				$html .= '<p class="pt-items-left">'.sprintf(__('Only %s left!','paytium'), $items_left).'</p>';
 			}
 		}
 	}
 
 	if (function_exists('pt_paytium_general_limit_reached') && !empty($general_item_id) && !empty($general_limit)) {
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][general_limit]" value="' . $general_limit . '" data-pt-user-label="General Limit" />';
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][general_item_id]" value="' . $general_item_id . '" data-pt-user-label="General Item ID" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][general_limit]" value="' . $general_limit . '" data-pt-user-label="General Limit" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][general_item_id]" value="' . $general_item_id . '" data-pt-user-label="General Item ID" />';
 		if (empty($limit) && !empty($item_id)) {
-			$html .= '<input type="hidden" name="pt_items[' . $counter . '][item_id]" value="' . $item_id . '" data-pt-user-label="Item ID" />';
+			$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][item_id]" value="' . $item_id . '" data-pt-user-label="Item ID" />';
 		}
 		if ($paytium_item_limits && pt_paytium_general_limit_reached($general_item_id,$general_limit,$paytium_item_limits)) {
 			$html = '';
@@ -2680,16 +2721,16 @@ function pt_cf_label( $attr ) {
 	}
 
 	if (!empty($multiplied_by)) {
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][multiplied_by]" value="' . $multiplied_by . '" data-pt-user-label="Multiplied by" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][multiplied_by]" value="' . $multiplied_by . '" data-pt-user-label="Multiplied by" />';
 	}
 
 	if ($zero_tax) {
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][add_zero_tax]" value="1" data-pt-user-label="Zero tax" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][add_zero_tax]" value="1" data-pt-user-label="Zero tax" />';
 	}
 
-	$counter++;
+	$pt_counter++;
 
-	return '<div class="pt-form-group pt-form-group-'.$ptfg_counter.' pt-form-group-label ' . $has_quantity_class . '">' . apply_filters( 'pt_paytium_label', $html, $args ) . '</div>';
+	return '<div class="pt-form-group pt-form-group-'.$pt_ptfg_counter.' pt-form-group-label ' . $has_quantity_class . '">' . apply_filters( 'pt_paytium_label', $html, $args ) . '</div>';
 
 }
 
@@ -2703,11 +2744,11 @@ function pt_paytium_links( $attr ) {
 		return;
 	}
 
-	global $counter;
+	global $pt_counter;
 
 	extract( shortcode_atts( array(), $attr ) );
 
-	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_links_' . $counter, 'paytium_links', $attr, false );
+	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_links_' . $pt_counter, 'paytium_links', $attr, false );
 
 	$auto_redirect = ( ! empty( $attr[0] ) ) ? $attr[0] : '';
 
@@ -2720,9 +2761,9 @@ function pt_paytium_links( $attr ) {
 
 	}
 
-	$args = pt_get_args( '', $attr, $counter );
+	$args = pt_get_args( '', $attr, $pt_counter );
 
-	$counter++; // Increment static counter
+	$pt_counter++; // Increment static counter
 
 	return apply_filters( 'pt_paytium_links', $html, $args );
 
@@ -2739,11 +2780,11 @@ function pt_paytium_no_payment( $attr ) {
 		return;
 	}
 
-	global $counter;
+	global $pt_counter;
 
 	extract( shortcode_atts( array(), $attr ) );
 
-	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_no_payment_' . $counter, 'paytium_no_payment', $attr, false );
+	Paytium_Shortcode_Tracker::add_new_shortcode( 'paytium_no_payment_' . $pt_counter, 'paytium_no_payment', $attr, false );
 
 	$invoice = ( ! empty( $attr[0] ) ) ? $attr[0] : '';
 
@@ -2753,9 +2794,9 @@ function pt_paytium_no_payment( $attr ) {
         $html .= '<input type="hidden" name="pt-paytium-no-payment-invoice" value="1" />';
     }
 
-	$args = pt_get_args( '', $attr, $counter );
+	$args = pt_get_args( '', $attr, $pt_counter );
 
-	$counter++; // Increment static counter
+	$pt_counter++; // Increment static counter
 
 	return apply_filters( 'pt_paytium_no_payment', $html, $args );
 
@@ -2875,7 +2916,7 @@ function pt_paytium_user_data($attr)
 		return;
 	}
 
-    global $counter;
+    global $pt_counter;
     $attr = shortcode_atts(array(
         'role' => '',
     ), $attr, 'paytium_user_data');
@@ -2885,7 +2926,7 @@ function pt_paytium_user_data($attr)
     // Make user role lowercase for users that don't use the proper user role slug (which should be lowercase)
 	$role = strtolower($role);
 
-    Paytium_Shortcode_Tracker::add_new_shortcode('paytium_user_data_' . $counter, 'paytium_user_data', $attr, false);
+    Paytium_Shortcode_Tracker::add_new_shortcode('paytium_user_data_' . $pt_counter, 'paytium_user_data', $attr, false);
 
     // Sign the role with the site secret so the client cannot substitute a role of their choosing
     // on submission (prevents privilege escalation via the hidden pt-paytium-user-data field).
@@ -2894,9 +2935,9 @@ function pt_paytium_user_data($attr)
     $html  = '<input type="hidden" id="pt-paytium-user-data" name="pt-paytium-user-data" class="pt-paytium-user-data" value="'.esc_attr($role).'" data-pt-field-type="pt-paytium-user-data" />';
     $html .= '<input type="hidden" name="pt-paytium-user-data-sig" value="'.esc_attr($role_sig).'" />';
 
-    $args = pt_get_args('', $attr, $counter);
+    $args = pt_get_args('', $attr, $pt_counter);
 
-    $counter++; // Increment static counter
+    $pt_counter++; // Increment static counter
 
     return apply_filters('pt_paytium_user_data', $html, $args);
 
@@ -2910,7 +2951,7 @@ add_shortcode('paytium_user_data', 'pt_paytium_user_data');
 function pt_paytium_progress($attr)
 {
 
-	global $counter, $pt_id, $form_currency;
+	global $pt_counter, $pt_id, $pt_form_currency;
 
 	if (!empty($attr)) {
 		foreach ($attr as $key => $attribute) {
@@ -2942,7 +2983,7 @@ function pt_paytium_progress($attr)
 	$html = '';
 
 	if (!empty($crowdfunding_id) && Paytium_Shortcode_Tracker::$is_main_shortcode) {
-		$html .= '<input type="hidden" name="pt_items[' . $counter . '][crowdfunding_id]" value="' . $crowdfunding_id . '" data-pt-user-label="Crowdfunding ID" />';
+		$html .= '<input type="hidden" name="pt_items[' . $pt_counter . '][crowdfunding_id]" value="' . $crowdfunding_id . '" data-pt-user-label="Crowdfunding ID" />';
 	}
 
 	// Check first if in live or test mode.
@@ -2952,13 +2993,14 @@ function pt_paytium_progress($attr)
 		$current_mode = 'test';
 	}
 
-	$currency = $currency && is_file( PT_PATH . 'features/currency.php' ) ? $currency : ($form_currency[$pt_id] ? $form_currency[$pt_id] : 'EUR');
+	$currency = $currency && is_file( PT_PATH . 'features/currency.php' ) ? $currency : ($pt_form_currency[$pt_id] ? $pt_form_currency[$pt_id] : 'EUR');
 
     if ($crowdfunding_id) {
 
     	global $wpdb;
-		$prepare = $wpdb->prepare( "SELECT post_id FROM " . $wpdb->prefix . "postmeta WHERE meta_key = '_crowdfunding_id' AND meta_value = '%s'",$crowdfunding_id);
-		$results = $wpdb->get_results( $prepare );
+		$results = $wpdb->get_results(
+			$wpdb->prepare( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_crowdfunding_id' AND meta_value = %s", $crowdfunding_id )
+		);
 
 		foreach ($results as $post_id) {
 
@@ -3087,7 +3129,9 @@ function pt_paytium_content($attr, $content )
 	$period = isset($attr['period']) ? $attr['period'] : '';
 	$logged_in = isset($attr[0]) && $attr[0] == 'logged_in' ? true : false;
 	$logged_out = isset($attr[0]) && $attr[0] == 'logged_out' ? true : false;
-	$payment_key = isset( $_GET['pt-payment'] ) ? sanitize_key($_GET['pt-payment']) : sanitize_key(@$_COOKIE['ptpayment']);
+	$payment_key = isset( $_GET['pt-payment'] )
+		? sanitize_key( wp_unslash( $_GET['pt-payment'] ) )
+		: ( isset( $_COOKIE['ptpayment'] ) ? sanitize_key( wp_unslash( $_COOKIE['ptpayment'] ) ) : '' );
 	$item_id = isset($attr['item_id']) ? $attr['item_id'] : '';
 
 	$html = '';
@@ -3311,15 +3355,14 @@ function paytium_content_payments_helper_function( $data, $post_type, $item_id, 
 		if ($item_id != '') {
 			global $wpdb;
 
-			$post_query = $wpdb->prepare(
-				"
-						SELECT post_id
-						FROM {$wpdb->prefix}postmeta
-						WHERE meta_key
-						LIKE '_pt-field-item-id%' AND meta_value = '%s'
-						", $item_id
+			$post_query = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key LIKE %s AND meta_value = %s",
+					$wpdb->esc_like( '_pt-field-item-id' ) . '%',
+					$item_id
+				),
+				ARRAY_N
 			);
-			$post_query = $wpdb->get_results($post_query,ARRAY_N);
 
 			if ($post_type == 'pt_subscription') {
 				foreach ($post_query as $result) {
@@ -3411,15 +3454,15 @@ function pt_normalize_empty_atts($atts) {
  */
 function pt_paytium_collect_amounts( $amount ) {
 
-	global $collected_amounts;
+	global $pt_collected_amounts;
 
 	$amount = pt_user_amount_to_float( $amount );
 
 	if ( ! empty( $amount ) ) {
-		$collected_amounts[] = $amount;
+		$pt_collected_amounts[] = $amount;
 	}
 
-	return $collected_amounts;
+	return $pt_collected_amounts;
 
 }
 
@@ -3430,18 +3473,18 @@ function pt_paytium_collect_amounts( $amount ) {
  */
 function pt_paytium_collect_fields( $id, $type, $required ) {
 
-	global $collected_fields;
+	global $pt_collected_fields;
 
 
 	// Check values aren't empty, or add defaults
 
-	$collected_fields[ $id ] = array (
+	$pt_collected_fields[ $id ] = array (
 		'id'       => $id,
 		'type'     => $type,
 		'required' => $required
 	);
 
-	return $collected_fields;
+	return $pt_collected_fields;
 
 }
 
@@ -3452,21 +3495,21 @@ function pt_paytium_collect_fields( $id, $type, $required ) {
  */
 function pt_paytium_store_form_elements( $form_load_id ) {
 
-	global $collected_amounts;
-	global $collected_fields;
-	global $collected_discounts;
+	global $pt_collected_amounts;
+	global $pt_collected_fields;
+	global $pt_collected_discounts;
 
-	$form_data['amounts'] = $collected_amounts;
-	$form_data['fields']  = $collected_fields;
-	$form_data['discounts']  = $collected_discounts;
+	$form_data['amounts'] = $pt_collected_amounts;
+	$form_data['fields']  = $pt_collected_fields;
+	$form_data['discounts']  = $pt_collected_discounts;
 
 	// Combine amounts and fields
 	$form_load_id = 'paytium_form_load_' . $form_load_id;
 
 	set_transient( $form_load_id, $form_data, 7 * DAY_IN_SECONDS );
-	$collected_amounts = [];
-	$collected_fields = [];
-	$collected_discounts = [];
+	$pt_collected_amounts = [];
+	$pt_collected_fields = [];
+	$pt_collected_discounts = [];
 
 }
 
@@ -3523,8 +3566,8 @@ function pt_paytium_login_button($attr) {
 	else {
 		$html = '<button id="paytium-login-btn" class="paytium-login-btn button">'.$login_button_label.'</button>';
 
-		add_action('wp_footer', 'wpshout_action_example');
-		function wpshout_action_example() {
+		add_action('wp_footer', 'pt_render_login_form_overlay');
+		function pt_render_login_form_overlay() {
 			$html2 = '<div class="paytium-login-form-overlay"><span class="paytium-login-close">&times;</span><div class="paytium-login-form-wrapper">';
 			$html2 .= wp_login_form( array(
 				'echo'           => false,
@@ -3543,6 +3586,10 @@ function pt_paytium_login_button($attr) {
 				'value_remember' => false
 			) );
 			$html2 .= '</div></div>';
+
+			// Escaping this printed the whole overlay as visible text, so the element the
+			// .paytium-login-btn handler fades in (public.js:2047) never existed in the DOM.
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $html2 is markup: static wrapper divs plus wp_login_form()'s own output.
 			echo $html2;
 		}
 	}

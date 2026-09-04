@@ -1,8 +1,8 @@
 === Paytium: Mollie payment forms & donations ===
 Contributors: davdebcom
-Requires at least: 6.2
-Tested up to: 7.0
-Stable tag: 5.0.3
+Requires at least: 6.5
+Tested up to: 7.1
+Stable tag: 5.0.4
 Requires PHP: 7.4
 Tags: ideal, mollie, donation, credit card, wordpress payment forms
 License: GPLv2 or later
@@ -170,6 +170,24 @@ Plugin Say What could also be an option.
 6. **Review all payments and their status** - Check the status of all payments directly in the WordPress admin. Use the built-in "Order Status" to keep track of your own processing directly in WordPress.
 
 == Changelog ==
+
+ = 5.0.4 –  September 2, 2026 =
+### All Paytium versions
+Paytium version 5.0.4 includes a patch for critical privilege escalation vulnerabilities that can be exploited by  un-authenticated users. If these users are not trusted, please apply the update immediately.
+FIX : Unauthenticated Privilege Escalation via 'pt_form_field [pt-user-role]' Parameter
+NEW 1 : New setting location when setting role with admin capabilities 
+[paytium_user_data role= "role_with_admin_capabilities" /] 
+NEW 2 : User Roles with admin capabilities - New Setting location -> Paytium > Settings > Advanced > Allowed User Roles with setting purpose description added, see new 1
+Paytium version 5.0.4  also includes general bug fixes, improved plugin security, and performance enhancements, and is optimized for WordPress 7.1 and PHP 8.5.
+* Paytium ready, tested & compatible with the latest version WP 7.1
+* Paytium ready, tested & compatible with PHP 8.5
+* Paytium updates for WP 7.1 & PHP 8.5
+* Elementor free version 4.2.3 (paired to run the Pro version) is compatible with Paytium 5.0.4 on WP 7.1
+FIX : General bug fixes, improved plugin security, and performance improvements
+NEW: Mollie V3 API update
+### Plus, Pro, Premium
+NEW : Mailerlite Library updated 
+NEW: Mollie V3 API update
 
 = 5.0.3 – June 17, 2026 =
 ### All Paytium versions
@@ -583,3 +601,380 @@ Subscriptions
 
 * Fix - Remove pt_float_amount_to_currency() from get_item_data(), it's to early, causes issues later in the process
 * Fix - Revert &quot;Remove id attribute from individual radio fields (to get HTML validation)&quot;
+
+= 3.1.1 - September 6th, 2019 =
+
+* Fix - Crowdfunding: add option &quot;add_amount&quot; to flexibly add a starting amount to a project
+
+= 3.1.0 - September 5th, 2019 =
+
+* Fix - Fix issue with Paytium Block by removing isEmptyObject (Gutenberg/Block editor)
+* Fix - Update jQuery UI to only load on pages with Paytium shortcode, not all pages (improves performance)
+* Fix - Improve chargeback notification message/notice
+* Fix - Chargeback notification should only be shown in Paytium, not all WP admin pages
+
+= 3.0.13 - July 8th, 2019 =
+
+* Fix - Remove id attribute from individual radio fields (to get HTML validation)
+* Fix - Fix minor PHP warning for $paytium_item_limits
+* Fix - Solve conflict with CiviCRM by only checking for Subscriptions menu when user is in admin
+* Fix - Setup Wizard v4: encode username, countries updated, update text etc
+* Fix - Correct multiple issues with display of renewal payments, caused by incorrect SQL query
+* Fix - No longer get renewal payment information from first payment, as renewal payment contains it already
+* Fix - Paytium Logger: Suppress PHP warning because I'm already checking if file can be opened
+* Fix - Replace YouTube video after Setup Wizard with Vimeo video
+* Fix - Setup Wizard: remove username and category for Mollie account
+* Fix - Paytium Logger: Check file permissions before writing to log (fixes a PHP warning)
+* Fix - Webhook: Add better HTTP response code function, add better log messages
+* Fix - Webhook: Improve test for _is_admin_test with subscription webhooks to fix PHP warning
+* Fix - Improve quantity box field by adding padding (issue in some themes)
+* Fix - For payments without payment update amount from dash to 0 to fix &quot;Non-numeric&quot; PHP warnings
+* Fix - Update &quot;Only x left!&quot; translation string to not include ()
+* Fix - Fix PHP error &quot;Invalid argument supplied for foreach()&quot; in shortcodes.php line 2440
+* Fix - Update currency in user entered amount input field (based on bootstrap) to work with more themes
+* Fix - Update api.davdeb.com to davdeb.com/api
+* Fix - Remove Mollie account create from plugin, no longer supported
+
+= 3.0.12 - May 24th, 2019 =
+
+* Fix - Add isset() check to fix PHP warning about $paytium_payment['subscription_id']
+* Fix - Set pt_payment_failed meta box to priority high so it's more visible when something goes wrong
+* Fix - Fix incorrect tax in views because amount was set to integer instead of float
+
+* Fix - Zapier: Fix PHP error by setting an array() default for paytium_statuses_webhook
+* Fix - Exports: add description to Exports &gt; Payment source
+* Fix - Fix warning about non-object when updating Paytium
+
+= 3.0.11 - May 14th, 2019 =
+
+* Fix - Don't load jquery-ui.css on admin pages outside Paytium, fixes conflict with Divi
+* Fix - Subscription webhook: improve order so processing with different statuses works better
+* Fix - Remove &quot;Open in new window&quot; from links in Subscription details (target blank)
+* Fix - Subscription details: make sure a subscription error and details can be shown at the same time
+* Fix - Error where a space was required after opening PHP tag (subscription-details.php)
+* Fix - Webhook: handle renewal payments with status refund differently (and add log message)
+* Fix - Minor: update code comments and log messages
+
+= 3.0.9 - May 6th, 2019 =
+
+* New - Experimental: add &quot;hidden&quot; field type
+
+* Fix - Also show chosen field value in payment items
+* Fix - Fix PHP error with &quot;Only x left!&quot; message, check that array key exists before calling the key
+* Fix - Recognize some incorrect field types that users might enter and convert them to correct, examples: naam &gt; name, voornaam &gt; firstname, e-mail &gt; email
+* Fix - Improve &quot;Unknown field type&quot; warning: only show to admins, only show when defaulting to text field because field type is not known (in switch statement), better explain what's wrong, keep showing field (don't break)
+* Fix - Convert field types to lowercase, with not spaces, and trim, in the hope that incorrect types entered by users are recognized by Paytium more often
+* Fix - Fix JavaScript error by checking ptCheckboxItemId data exists before handling it
+* Fix - Fix issues payment data not being shown by moving pt_get_first_payment_id to payment_functions.php
+* Fix - Only show link to Subscriptions Pro Edit screen in Plus, Pro, Premium
+
+= 3.0.8 - April 28th, 2019 =
+
+* Fix - Rename ideal.svg icon to ideal-2019.svg in the hopes it will better bust the cache (and it's not huge anymore)
+* Fix - Issue in Internet Explorer 10, where dataset is not supported, now using getAttribute (JavaScript)
+* Fix - User entered amounts where not formatted correctly (parseAmount)
+* Fix - iDEAL icon/svg in menu size was uncommented in CSS, causing it to be too large
+* Fix - Subscription details in some cases where not shown in Payment &gt; Edit
+
+= 3.0.7 - April 24th, 2019 =
+
+Check out the most awesome new features: [memberships](https://www.paytium.nl/handleiding/membership-sites-wordpress/), [crowdfunding](https://www.paytium.nl/handleiding/crowdfunding-wordpress/), [limits](https://www.paytium.nl/handleiding/limieten/), [field quantities](https://www.paytium.nl/handleiding/flexibele-bedragen/), [file uploads](https://www.paytium.nl/handleiding/extra-velden/).
+
+* New: Add Crowdfunding, including a bar with total donations amount
+* New: Test forms in test mode without entering API Keys
+* New: Administrator test mode (checkbox in settings) allows admins to test payments without other users experiencing this
+* New: Add a date with the &quot;until&quot; option to a form and the form will automatically close after that date
+* New: Set your own &quot;From&quot; email details in Paytium &gt; Settings &gt; Advanced, other plugins (WP Mail From II) no longer needed)
+* New: Add date range selector to Payments overview
+* New: Added a better field style for showing currency in the open amount (text) field
+* New: Default message after payment will now be shown in the Paytium form/shortcode, and not replace the entire page content. Solves multiple issues with Page Builders. If you don't want this, add 'full_page_return_message' to the starting shortcode of your Paytium form.
+* New: Added new field quantity for adding simple amounts, for example `[paytium_field type=&quot;label&quot; label=&quot;Tickets B&quot; amount=&quot;49.95&quot; quantity=&quot;true&quot; /]`
+* New: Sell memberships and only allow access to WordPress content when certain (payment) conditions are met
+* New: Add date field type, with a little calender pop-up
+* New: Store the page/post from where a payment started as &quot;source&quot;
+* New: Add &quot;file&quot; field to allow uploads with `[paytium_field type=&quot;file&quot; /]`
+* New: Add item limits (basic inventory)
+* New: Add optional minimum for open amounts with `min=&quot;&quot;` attribute for fields
+* New: Include more payment (meta) date in search, so it's easier to find payments based on user information
+* New: Option to set user role when creating users after a payment
+
+* Fix: Paid user registrations (user data), also add the role to existing account(s)
+* Fix: Removed the nonce used in payment forms, nonce's aren't for frontend forms!
+* Fix: Payment links, also support spaces in URL parameters (remove %20 etc)
+* Fix: File field (for uploads): make sure the required option is respected
+* Fix: Only show 'Administrator test mode' in Live mode
+* Fix: For new quantity fields, set default to 0, not 1
+* Fix: Optimize layout of open field with currency symbol
+* Fix: Multiple PHP 5.3 warnings (come on, update to at least PHP 7, people!)
+* Fix: Update jquery-ui.css enqueue to support http and https
+* Fix: Crowdfunding: allow switch between test and live mode, allow multiple forms to have individual counters
+* Fix: If Subscription times is a space, set it to empty and process subscription anyway
+* Fix: Make sure custom fields are not shown outside of the Paytium form, should solve issues where users have an incorrect form syntax without knowing it.
+* Fix: Check for unknown field types in the Paytium form, and show a message. Should prevent users from using &quot;E-mail&quot; instead of &quot;email&quot; as type
+* Fix: Selected option not stored with first_option=&quot;amount&quot;
+* Fix: Solve issues with Bold Page Builder
+* Fix: Handle immediately failed payments, set the status to &quot;failed&quot; instead of keeping them &quot;open&quot;
+* Fix: Add specific CSS classes for pt-form-group, so you can call individual form groups with CSS
+* Fix: Implement nonce in Paytium forms for increased security
+* Fix: Required checkbox in one form shows error in other forms
+
+= 2.1.6 - February 21th, 2019 =
+
+* Update ideal.svg (icon in menu) to have cache busting (so icon isn't gigantic)
+
+= 2.1.5 - January 20th, 2019 =
+
+* Add 'Paytium Code' block for WordPress 5.x Block Editor (includes ideal.svg)
+* Setup Wizard: Remove 'I have a Mollie account' form, add a short manual
+
+= 2.1.4 - November 1st, 2018 =
+
+* New: Add support for EPS, GiroPay
+* New: Rename MisterCash to Bancontact
+* New: In Payments search include meta data so it's more powerful
+
+* Fix: Setup Wizard: better explain what people can do when the wizard fails
+* Fix: Add separate items table for payments admin view
+* Fix: Don't try to create a subscription if one is already active
+* Fix: Language string updates
+* Fix: Update API endpoint to https://api.mollie.com (advice by Mollie)
+* Fix: Update minimum amount to 99 cent, so 1 euro is accepted
+* Fix: Required checkbox shows error in other forms
+
+= 2.1.3 - May 24th, 2018 =
+
+* Fix: Show Paytium iDEAL icon in WP editor with inline CSS (reverted), causes display issues with Media Manager, Updraft Plus etc, replaced with javascript
+
+= 2.1.2 - May 24th, 2018 =
+
+* New: Add new shortcode [paytium_button /] with support for custom css classes, style definitions
+
+* Fix: Default amounts in open fields (donations) weren't registered correctly, causing &quot;Invalid amount&quot; error
+* Fix: Remove unused $default and $required for checkbox and terms fields
+* Fix: Remove hard-coded required for name, first name and last name fields
+* Fix: Show Paytium iDEAL icon in WP editor in Pro versions too (move CSS inline, thank you HTML5!)
+* Fix: Only show toolbar and 'Pro versions' link to users with capability 'manage_options'
+
+= 2.1.1 - May 8th, 2018 =
+
+* FIX:
+    * PHP 7.x fatal error &quot;Cannot use &quot;self&quot; when no class scope is active&quot;
+
+= 2.1.0 - May 7th, 2018 =
+
+* NEW:
+    * Option to process field data as [user information (for creating users and storing as user meta in WordPress)](https://www.paytium.nl/handleiding/na-betaling-gebruikers-aanmaken-wordpress/)
+    * Subscriptions: add support for [first payment](https://www.paytium.nl/handleiding/recurring-payments/#afwijkende-eerste-betaling) which is different than recurring payment amount
+    * Improved form validation and anti-spam: check that amount is not zero, JavaScript is enabled, and Paytium's JavaScript file is included.
+    * Add ability for Paytium to also [sum up checkbox amounts](https://www.paytium.nl/handleiding/flexibele-bedragen/)
+    * Many usability improvements based on feedback by users, for example in Setup Wizard
+    * Add filter paytium_items_table_emails_invoices for items table (invoices/emails)
+    * Updated Mollie API PHP to 1.9.6 (for compatibility with Mollie Payments for WooCommerce)
+    * Information from custom fields no longer sent to Mollie by default, see [FAQ](https://www.paytium.nl/handleiding/veelgestelde-vragen/#extra-velden-als-metadata-meesturen-naar-mollie)
+    * Add link to [explanation of payment statuses](https://www.paytium.nl/handleiding/betalingen-beheren/#betekenis-van-statussen)
+    * Add ING Home'Pay and gift cards as payment methods
+    * Add filter ['paytium_payment_description' so developers can change the payment description](https://www.paytium.nl/handleiding/veelgestelde-vragen/#omschrijvingen-van-betalingen-aanpassen)
+    * Add link to [pro versions](https://www.paytium.nl/prijzen/) on Paytium website
+
+* FIX:
+    * Subscriptions: multiple improvements to processing of subscriptions, making sure new subscriptions can't be created by accident
+    * Fix Paytium &gt; Payments view on small screen size
+    * Remove pt_is_localhost() check before shortcode generation because in some server configurations, the IP is actually set to 127.0.0.1 even when the server is production
+    * Fixed issue where with open fields (user entered custom amount) the amount wasn't stored correctly before payment
+    * Add a call to catch $_POST['pt-amount'] for processing payment functions for backwards compatibility of custom integrations
+    * Fix bug where field type checkbox only saves one option
+    * Make sure required checkboxes only get one &quot;This field is required&quot; error
+    * Add explicit explanation that voting on Paytium features subscribes user to newsletter
+    * Don't create a Mollie customer when a form doesn't include a payment [(Paytium No Payment)](https://www.paytium.nl/handleiding/formulier-zonder-betaling/)
+    * The register_activation_hook was implemented incorrectly and didn't run, causing admin notices to not display
+    * Improve 'Items Table' layout in payment edit, invoices, emails
+    * Improve styling of dropdowns in forms to look the same as text input
+    * Label of fields with type firstname was not stored (by typo in ddata)
+    * Checkboxes: remove default checkbox for amounts, make sure terms option is also stored, only sum up amounts for amount checkboxes, not eg. terms
+    * Fix harmless warning in developer console for missing Parsley map file
+    * Add explanation to prefilled fields (name, firstname, lastname, email) for administrators
+    * Email field: fix validation when field not required and empty
+
+= 2.0.6 - January 14th, 2018 =
+
+* FIX:
+    * Made sure payment status is translated on return page
+    * Paytium Links: amounts with comma's as separator not processed correctly
+    * If a form contains multiple required email fields with no input on submit, the &quot;This value is required&quot; message was shown multiple times under the first field
+    * Fixed issue where with open fields (user entered custom amount) the amount wasn't stored correctly before payment
+    * Remove check for amount format in open amount fields (user entered amount) as it's also done in form processing javascript and causes issues in some browsers (regex pattern)
+    * Updated examples in TinyMCE button to match new format, see https://www.paytium.nl/handleiding/flexibele-bedragen/
+
+= 2.0.5 - December 7th, 2017 =
+
+* NOTES:
+    * Paytium can now count multiple amounts (bedragen optellen) in one form! Hooray! But this does mean that if you have an incorrect form, the total might be too high. I have a noticed a small group of users have this incorrect setup. Please check your forms after the update, and make sure your total amount is correct.
+
+* NEW:
+    * Add new amount shortcodes so you can include multiple items (products/services/amounts) per form
+    * Add support for setting a tax percentage per item tag
+    * Add support for summing up (optellen) multiple items
+    * Add Payments link to WordPress sidebar
+
+* FIX:
+    * Make sure extra fields of type textarea are not included in Mollie metadata (otherwise might hit Mollie metadata limit and show an error)
+    * Terms &amp; Conditions checkbox: fix bug, link to T&amp;C (with 404 error) shown even when not set
+    * Setup Wizard: individual website profiles can now be seen and selected (for users that already have active profiles)
+    * Setup Wizard: fix &quot;Check again&quot; button
+    * Fix bug when using first name and last name field and recurring payments (Mollie Customer not created)
+    * Update minimum capability for Payments overview to edit_posts so Editors can view them
+    * Saving selected labels in dropdowns &amp; radio buttons
+    * Make sure CSS/icon for Paytium icon in editor is also shown in site
+
+* UX:
+    * Subscriptions: show Mollie Customer ID in Subscriptions metabox
+    * Subscriptions: improvement to only create a subscription if first payment is not expired, cancelled or failed
+    * Subscriptions: fix &quot;Cancel subscription&quot; button and show more useful information to users (after Mollie changed their API, causing an error when button was used)
+    * Subscriptions: improve Mollie Subscriptions implementation by saving and showing more useful information to users
+    * Payments overview: improve style of status labels in Payments overview
+    * Update Parsley.js to 2.7.2 (fixes conflicts with plugins, at least Caldera Forms)
+
+* DEV:
+    * Webhook: use GET/POST instead of REQUEST and sanitize input
+    * Remove unused libraries: pikaday, WPUpdatePhp, moment.js
+    * Subscriptions: only save subscription post meta fields if payment is actually a subscription
+    * Moved MailChimp API libraries to pro versions so basic version is lighter
+    * Updated Mollie API PHP client to 1.9.1
+
+= 1.5.0 - May 27th, 2017 =
+
+* NEW:
+    * Links: pre-fill information into a form from a URL, see [manual](https://www.paytium.nl/handleiding/links/).
+    * No Payment: create normal forms that don't need a payment, see [manual](https://www.paytium.nl/handleiding/formulier-zonder-betaling/).
+    * Automatically prefill a users name (full, first, last) if logged in
+
+* FIX:
+    * Make sure text after clicking Buy Now-button -Even wachten a.u.b- is translatable
+    * Improve styling/css of user-entered-amount (open field for amount)
+    * Improved translations and fixed typo's
+    * Fix bug where newly created profile key was not stored in Setup Wizard
+
+* UX:
+    * Don't show a notice for Setup Wizard if Paytium is already set to accept Live payments
+    * Don't show Setup Wizard in menu if site is set to Live payments
+    * Add admin notice explaining that using the Setup Wizard is not required if site has already received live payments
+    * During Setup Wizard only set site to Live payments if website profile is verified, not just on check
+
+* DEV:
+    * Split payment, webhook &amp; redirect functions into 3 separate files
+
+= 1.4.1 - March 18th, 2017 =
+
+* NEW: Added (3) better messages after payment per status (paid, open and other statuses)
+* NEW: Add new hooks after webhook processing of subscription first and renewal payments, paytium_webhook_subscription_renewal_payment and paytium_webhook_subscription_first_payment
+* FIX: Re-add support for sending custom field info to Mollie, but cap at 20 fields because of Mollie metadata size limit
+* FIX: Updated always_enqueue check to paytium_always_enqueue, caused scripts to not always load when Paytium shortcode was not found in the content
+
+= 1.4.0 - February 21st, 2017 =
+
+* Bug fixes:
+    * Add a custom start date for subscriptions, so they start the interval period after the first payment (no more double payments)
+    * Make sure payment status shown after payment (in the Thank you message) is pretty and translated (to Dutch for example), not an untranslated (English) database value
+    * Add a colon ':' to the label of paytium_dropdown and paytium_radio automatically, just like the other fields in the payment form
+    * Payment and order status labels in Paytium &gt; Payments did not have different colours previously
+    * On some sites payment status was not updated because the home_url() didn't include a trailing slash by default, changed webhook URL to always have a trailing slash
+    * Also recognize amounts in [paytium_dropdown /] &amp; [paytium_radio /] if there is no description in the options, just an amount
+    * Added wp_unslash to remove slashes before description and name are sent to Mollie
+    * The error &quot;Invalid Customer ID&quot; will no longer be shown when a webmaster moves from test to live payments and does a test with a known email address
+* Subscriptions, improved and extended the implementation of recurring payments:
+    * Added Subscription details in Paytium &gt; Payment &gt; Edit Payment, only shown when payment is a subscription
+    * Added button to cancel subscriptions from Paytium &gt; Payments &gt; Edit Payment
+    * Added an icon to Paytium &gt; Payments, with different colours, indicates if a payment is for a subscription and what the status is
+        * Orange icon: subscription pending, not created yet
+        * Green icon: subscription created
+        * Red icon: creating subscription failed
+        * Blue icon: renewal payment for existing subscription
+    * Storing more subscription related information to the database, like subscription_payment_status and subscription_error
+    * Register a webhook URL for subscriptions at Mollie, so renewal payments for subscriptions will also be sent to the website/Paytium
+    * Only try to create a subscription if payment status is paid and there is a valid mandate, and save subscription status to database
+* Improvements:
+    * Remove limitations in amount of custom fields that can be added and stop sending custom field data to Mollie in metadata (limit was 1024KB)
+    * Added a hook (paytium_after_pt_payment_update_webhook) after Mollie calls the webhook, so you can do some addition processing after a payment
+    * Added a hook (paytium_after_full_payment_saved) directly after Paytium saves the full payment, for developers PP features
+    * Added a hook (paytium_update_payment_status_from_admin) so stuff can be done when status is updated from WordPress admin (like sending emails)
+    * Added space between euro currency symbol and amount, as is the norm in the Dutch language
+    * Added label option for paytium_total tag, example: label=&quot;Totaal&quot;
+    * Added filter pt_after_email_field which allows support for newsletter shortcodes (MailChimp, MailPoet) in the future
+    * Added optional processing for newsletter shortcodes (for PP)
+    * Added a message to Paytium &gt; Payments &gt; Edit Payment when payment is created in test mode: 'This payment was created in test mode!'
+    * Save label and selected option for custom amounts with [paytium_dropdown /] &amp; [paytium_radio /] to database
+    * Stop storing pt_cf_radio and pt_cf_dropdown to database, better way to handle them implemented in public.js
+    * Removed .mo and .pot files so translations are automatically handled by wordpress.org
+    * Removed lot's of redundant code and reformatted other code to WordPress standards
+    * Output Mollie 'white screen of death' errors to the user, don't just log them to the debug.log
+    * Allow users to configure what the first option in an amount dropdown [paytium_dropdown /] should be
+    * Updated payment statuses in Paytium to actual ones that Mollie might use/send to the website
+    * Always create a new Mollie customer for every payment, most secure solution for the fact that Paytium has no 'customer management'
+    * Make pt_set_paytium_key smarter, so it uses correct key for existing payments
+
+= 1.3.1 - October 25th, 2016 =
+
+* Error shown when customer_id was not set in certain cases
+* Improved PHP 5.3 compatibility by switching back to old-style array syntax
+* Solved a fatal error on PHP versions below PHP5.5, where empty() doesn't support more than $variables
+* Removed check for multiple [paytium_subscription /] tags in one form, incorrectly checks entire content, not just form
+* Improved CSS for &quot;User Entered Amounts&quot; so currency and field fit on one line in most themes (.pt-form-group .pt-uea-container input[type=&quot;text&quot;])
+
+= 1.3.0 - October 16th, 2016 =
+
+* NEW: Added support for subscriptions/recurring payments with [paytium_subscription /] shortcode
+* FIX: Added default css for .pt-checkout-form button
+* FIX: Fixed issue that made all fields required, even if set to required=false
+
+= 1.2.0 - October 7th, 2016 =
+
+* Updated the CSS for fields of the payment form so it automatically works better with more themes
+* Updated Mollie API to version 1.6.6/1.7.0 with support for new APIs, Customers and Subscriptions support coming soon
+* Added newsletter opt-in notice
+* De-minify admin.css and remove admin.scss, as I don't use sass for this plugin
+* Added Extensions page so users can show interest in new features
+* Other minor UI improvements and fixes
+
+= 1.1.0 - September 13th, 2016 =
+
+* NEW: Added custom fields, current types: text field, text area, email field, radio buttons, checkbox, dropdown, terms &amp; conditions checkbox
+* NEW: Added a hook (paytium_after_pt_show_payment_details) after payment, so you can hook into the messages after payment and for example redirect to another page
+* NEW: Added Dutch language file for form validation, for example &quot;Dit veld  is verplicht&quot; instead of &quot;This field is required.&quot;
+* NEW: Added new option: button_label=&quot;KOPUH!&quot; for custom button text in your forms
+* Optimized the code that processed customer_details=&quot;true&quot; to use new custom fields process, keeping it backwards compatible
+* Form and field CSS improvements (field margins etc)
+* Fixed typo in URL to Mollie.com
+* In CSS removed pt-radio-group margin, caused issues in some themes
+
+= 1.0.4 - April 15th, 2016 =
+
+* Added check for no or low amounts, shows a better error when people don't enter an amount or a too low amount
+* Cleaned up processing javascript
+* Setup wizard &gt; Create profile, make warning more prominent with pt-alert-danger
+* Bug fix for &quot;Notice: undefined variable html&quot;
+* Removed transaction_id column in Payments overview, not useful for the average user
+
+= 1.0.3 - March 24th, 2016 =
+
+* Changed to profile-verified for consistency with other API methods
+* Change client to wordpress (lowercase) for API communication
+* Show Mollie transaction ID in Payment overview and edit view
+* Add Paytium payment ID to Mollie description
+* Update Next step button in Setup wizard &gt; Create profile to go to Payment test instead of Create product step
+* Bug fix: incorrect API key used to check status of payments, so status was not updated in WP
+* Correct continue button in Setup Wizard &gt; Activate account to link to First product tab
+
+= 1.0.2 - March 15th, 2016 =
+
+* Fixed issue in Setup Wizard with javscript typo (at least in Firefox and Safari)
+
+= 1.0.1 - March 8th, 2016 =
+
+* Turn test mode off in communication to Mollie API
+* Added Dutch (nl-NL) language file
+* Small changes and typos
+
+= 1.0.0 - March 8th, 2016 =
+
+* Hooray, first public version!
+

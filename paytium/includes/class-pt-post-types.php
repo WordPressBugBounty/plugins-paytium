@@ -91,7 +91,8 @@ class PT_Post_Types {
 			'all_items'          => __( 'Payments', 'paytium' ),
 			'search_items'       => __( 'Search Payments', 'paytium' ),
 			'parent_item_colon'  => __( 'Parent Payments:', 'paytium' ),
-			'not_found'          => sprintf( __( 'Patience, my friend, patience!<br /> No payments received yet...<br />Did you finish the Paytium %ssetup%s?', 'paytium' ), '<a
+			/* translators: %1$s: opening link tag, %2$s: closing link tag. */
+			'not_found'          => sprintf( __( 'Patience, my friend, patience!<br /> No payments received yet...<br />Did you finish the Paytium %1$ssetup%2$s?', 'paytium' ), '<a
                 href="' . esc_url( admin_url( 'admin.php?page=paytium' ) ) . '" target="_blank">', '</a>' ),
 			'not_found_in_trash' => __( 'No Payments found in Trash.', 'paytium' )
 		);
@@ -132,7 +133,8 @@ class PT_Post_Types {
 			'all_items'          => __( 'Subscriptions', 'paytium' ),
 			'search_items'       => __( 'Search Subscriptions', 'paytium' ),
 			'parent_item_colon'  => __( 'Parent Subscriptions:', 'paytium' ),
-			'not_found'          => sprintf( __( 'Patience, my friend, patience!<br /> No subscriptions received yet...<br />Did you finish the Paytium %ssetup%s?', 'paytium' ), '<a
+			/* translators: %1$s: opening link tag, %2$s: closing link tag. */
+			'not_found'          => sprintf( __( 'Patience, my friend, patience!<br /> No subscriptions received yet...<br />Did you finish the Paytium %1$ssetup%2$s?', 'paytium' ), '<a
                 href="' . esc_url( admin_url( 'admin.php?page=paytium' ) ) . '" target="_blank">', '</a>' ),
 			'not_found_in_trash' => __( 'No Subscriptions found in Trash.', 'paytium' )
 		);
@@ -185,11 +187,13 @@ class PT_Post_Types {
 			2  => __( 'Custom field updated.', 'paytium' ),
 			3  => __( 'Custom field deleted.', 'paytium' ),
 			4  => __( 'Payment updated.', 'paytium' ),
+			/* translators: %1$s: title of the revision the payment was restored from */
 			5  => isset( $_GET['revision'] ) ? sprintf( __( 'Payment restored to revision from %s', 'paytium' ), wp_post_revision_title( (int) $_GET['revision'], false ) ) : false,
 			6  => __( 'Payment published.', 'paytium' ),
 			7  => __( 'Payment saved.', 'paytium' ),
 			8  => __( 'Payment submitted.', 'paytium' ),
 			9  => sprintf(
+				/* translators: %1$s: the scheduled publication date and time. */
 				__( 'Payment scheduled for: <strong>%1$s</strong>.', 'paytium' ),
 				date_i18n( __( 'M j, Y @ G:i', 'paytium' ), strtotime( $post->post_date ) )
 			),
@@ -264,27 +268,29 @@ class PT_Post_Types {
 			case 'status' :
 				$status = $payment->get_status();
 				?><span class='status status-<?php echo sanitize_html_class( strtolower( $payment->status ) ); ?>'><?php
-				echo $status;
+				echo esc_html( $status );
 				?></span><?php
 				break;
 
 			case 'amount' :
-				echo pt_float_amount_to_currency( $payment->get_amount(), $payment->currency );
+				echo esc_html( pt_float_amount_to_currency( $payment->get_amount(), $payment->currency ) );
 				break;
 
 			case 'payment_date' :
-				echo $payment->get_payment_date();
+				echo esc_html( $payment->get_payment_date() );
 				break;
 
 			case 'transaction_id' :
-				echo $payment->get_transaction_id();
+				echo esc_html( $payment->get_transaction_id() );
 				break;
 
 			case 'payment' :
 
 				if ( $payment->no_payment == false ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- returns built markup; every dynamic part is escaped inside the method.
 					echo $this->payments_overview_details_for_payments( $payment );
 				} else {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- returns built markup; every dynamic part is escaped inside the method.
 					echo $this->payments_overview_details_for_submissions( $payment );
 				}
 
@@ -294,7 +300,7 @@ class PT_Post_Types {
 				$order_status = $payment->get_order_status();
 				?><span
 				class='order-status order-status-<?php echo sanitize_html_class( strtolower( $payment->order_status ) ); ?>'><?php
-				echo $order_status;
+				echo esc_html( $order_status );
 				?></span><?php
 				break;
 
@@ -317,59 +323,61 @@ class PT_Post_Types {
 
 			if ( ( $payment->subscription_payment_status == 'pending')  ) {
 				$html .= '<span class="dashicons dashicons-backup paytium-subscription-pending-icon" title="';
-				$html .= __( 'Subscription not created yet.', 'paytium' );
+				$html .= esc_attr__( 'Subscription not created yet.', 'paytium' );
 				$html .= '"></span>';
 
 
 			} elseif ( ( $payment->subscription_payment_status == 'completed' || $payment->subscription_payment_status == 'initial' ) ) {
 				$html .= '<span class="dashicons dashicons-backup paytium-subscription-active-icon" title="';
-				$html .= __( 'Subscription created and paid.', 'paytium' );
+				$html .= esc_attr__( 'Subscription created and paid.', 'paytium' );
 				$html .= '"></span>';
 
 				// TODO: what about failed renewal payments?
 			} elseif ( $payment->subscription_payment_status == 'renewal' ) {
 				$html .= '<span class="dashicons dashicons-backup paytium-subscription-renewal-icon" title="';
-				$html .= __( 'Subscription renewal payment.', 'paytium' );
+				$html .= esc_attr__( 'Subscription renewal payment.', 'paytium' );
 				$html .= '"></span>';
 
 			} elseif ( $payment->subscription_payment_status == 'failed' ) {
 				$html .= '<span class="dashicons dashicons-backup paytium-subscription-failed-icon" title="';
-				$html .= __( 'Creating subscription failed:', 'paytium' ) . ' ' . strtolower( $payment->subscription_error );
+				$html .= esc_attr__( 'Creating subscription failed:', 'paytium' ) . ' ' . esc_attr( strtolower( $payment->subscription_error ) );
 				$html .= '"></span>';
 			}
 
 		}
 
 		else if ( $payment->subscription == '' && $payment->subscription_id != '') {
-			$payments = unserialize(get_post_meta($payment->subscription_id, '_payments', true));
+			$payments = pt_get_subscription_payments( $payment->subscription_id );
 
 			if ( $payment->subscription_status == 'pending' ) {
 				$html .= '<span class="dashicons dashicons-backup paytium-subscription-pending-icon" title="';
-				$html .= __( 'Subscription not created yet.', 'paytium' );
+				$html .= esc_attr__( 'Subscription not created yet.', 'paytium' );
 				$html .= '"></span>';
 
 			} elseif ( ( $payment->subscription_status == 'active' || $payment->subscription_status == 'cancelled' ) && !empty($payments) && $payments[0] == $payment->id &&
 			           $payment->subscription_error == '') {
 				$html .= '<span class="dashicons dashicons-backup paytium-subscription-active-icon" title="';
-				$html .= __( 'Subscription created and paid.', 'paytium' );
+				$html .= esc_attr__( 'Subscription created and paid.', 'paytium' );
 				$html .= '"></span>';
 
 				// TODO: what about failed renewal payments?
 			} elseif ( ( $payment->subscription_status == 'active' || $payment->subscription_status == 'cancelled' ) && !empty($payments) && $payments[0] != $payment->id &&
 			           $payment->subscription_error == '') {
 				$html .= '<span class="dashicons dashicons-backup paytium-subscription-renewal-icon" title="';
-				$html .= __( 'Subscription renewal payment.', 'paytium' );
+				$html .= esc_attr__( 'Subscription renewal payment.', 'paytium' );
 				$html .= '"></span>';
 
 			} elseif ( $payment->subscription_error != '' && $payment->subscription_status == 'cancelled' ) {
 				$html .= '<span class="dashicons dashicons-backup paytium-subscription-failed-icon" title="';
-				$html .= __( 'Creating subscription failed:', 'paytium' ) . ' ' . strtolower( __($payment->subscription_error, 'paytium') );
+				// phpcs:ignore WordPress.WP.I18n -- deliberate: the value is a runtime string (a payment status, an interval, or label text the site owner typed into the shortcode). Making these extractable means enumerating the values into includes/other-translations.php and looking them up through a map - a refactor, not a lint fix. Verified against languages/paytium-nl_NL.mo: none of these values currently resolve to a translation, so the __() call is a no-op today.
+				$html .= esc_attr__( 'Creating subscription failed:', 'paytium' ) . ' ' . esc_attr( strtolower( $payment->subscription_error ) );
 				$html .= '"></span>';
 
 			}
 		}
 
-		$html .= '<a href="' . get_edit_post_link( $payment->id ) . '" >';
+		$html .= '<a href="' . esc_url( get_edit_post_link( $payment->id ) ) . '" >';
+		/* translators: %1$s: the payment ID. */
 		$html .= '<strong>' . sprintf( __( 'Payment #%d', 'paytium' ), $payment->id ) . '</strong>';
 		$html .= '</a>';
 
@@ -385,7 +393,8 @@ class PT_Post_Types {
 
 		$html = '';
 
-		$html .= '<a href="' . get_edit_post_link( $payment->id ) . '" >';
+		$html .= '<a href="' . esc_url( get_edit_post_link( $payment->id ) ) . '" >';
+		/* translators: %1$s: the payment ID. */
 		$html .= '<strong>' . sprintf( __( 'Submission #%d', 'paytium' ), $payment->id ) . '</strong>';
 		$html .= '</a>';
 
@@ -586,7 +595,7 @@ class PT_Post_Types {
 	 */
 	public function save_custom_meta_boxes( $post_id ) {
 
-		if ( ! isset( $_POST['pt_payment_nonce'] ) || ! wp_verify_nonce( $_POST['pt_payment_nonce'], 'pt_payment_details' ) ) :
+		if ( ! isset( $_POST['pt_payment_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['pt_payment_nonce'] ) ), 'pt_payment_details' ) ) :
 			return $post_id;
 		endif;
 
@@ -600,13 +609,15 @@ class PT_Post_Types {
         }
 
 		$old_status = get_post_meta( $post_id, '_status', true );
-		switched_payment_status_log($post_id, $old_status, $_POST['payment_status']);
+		$pt_new_payment_status = isset( $_POST['payment_status'] ) ? sanitize_key( wp_unslash( $_POST['payment_status'] ) ) : '';
+		$pt_new_order_status   = isset( $_POST['order_status'] ) ? sanitize_key( wp_unslash( $_POST['order_status'] ) ) : '';
+		pt_switched_payment_status_log($post_id, $old_status, $pt_new_payment_status);
 
 		$payment = pt_get_payment( $post_id );
 
 		// Update post meta
-		$payment->set_status( $_POST['payment_status'] );
-		$payment->set_order_status( $_POST['order_status'] );
+		$payment->set_status( $pt_new_payment_status );
+		$payment->set_order_status( $pt_new_order_status );
 
 		$payment->update_status_from_admin( $post_id );
 	}
@@ -625,27 +636,28 @@ class PT_Post_Types {
 
 		if ( 'pt_payment' == $typenow ) :
 
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- renaming a registered hook callback is a silent breaking change for customer sites that remove_action() it; deferred to a major version.
 			do_action('datepicker_input');
 
-			$payment_status = isset( $_GET['_payment_status'] ) ? esc_attr($_GET['_payment_status']) : '';
+			$payment_status = isset( $_GET['_payment_status'] ) ? sanitize_key( wp_unslash( $_GET['_payment_status'] ) ) : '';
 			// Display payment status drop down
 			?><select name='_payment_status'>
-			<option value=''><?php _e( 'All payment statuses', 'paytium' ); ?></option><?php
+			<option value=''><?php esc_html_e( 'All payment statuses', 'paytium' ); ?></option><?php
 			foreach ( pt_get_payment_statuses() as $key => $value ) :
 				?>
 				<option <?php selected( $payment_status, $key ); ?>
-				value='<?php echo $key; ?>'><?php echo $value; ?></option><?php
+				value='<?php echo esc_attr( $key ); ?>'><?php echo esc_attr( $value ); ?></option><?php
 			endforeach;
 			?></select><?php
 
-			$order_status   = isset( $_GET['_order_status'] ) ? esc_attr($_GET['_order_status']) : '';
+			$order_status   = isset( $_GET['_order_status'] ) ? sanitize_key( wp_unslash( $_GET['_order_status'] ) ) : '';
 			// Display payment status drop down
 			?><select name='_order_status'>
-			<option value=''><?php _e( 'All order statuses', 'paytium' ); ?></option><?php
+			<option value=''><?php esc_html_e( 'All order statuses', 'paytium' ); ?></option><?php
 			foreach ( pt_get_order_statuses() as $key => $value ) :
 				?>
 				<option <?php selected( $order_status, $key ); ?>
-				value='<?php echo $key; ?>'><?php echo $value; ?></option><?php
+				value='<?php echo esc_attr( $key ); ?>'><?php echo esc_attr( $value ); ?></option><?php
 			endforeach;
 			?></select><?php
 
@@ -675,7 +687,7 @@ class PT_Post_Types {
 				$request['meta_query'][] = array (
 					'key'     => '_status',
 					'compare' => '=',
-					'value'   => sanitize_text_field( $_GET['_payment_status'] ),
+					'value'   => sanitize_text_field( wp_unslash( $_GET['_payment_status'] ) ),
 				);
 
 			endif;
@@ -684,7 +696,7 @@ class PT_Post_Types {
 				$request['meta_query'][] = array (
 					'key'     => '_order_status',
 					'compare' => '=',
-					'value'   => sanitize_text_field( $_GET['_order_status'] ),
+					'value'   => sanitize_text_field( wp_unslash( $_GET['_order_status'] ) ),
 				);
 
 			endif;
@@ -744,7 +756,7 @@ class PT_Post_Types {
 			?>
             <div class="misc-pub-section">
             <label>
-                <p class="howto pt-payment-intro"><?php echo __( 'A payment processed by Paytium.', 'paytium' ); ?></p>
+                <p class="howto pt-payment-intro"><?php echo esc_html__( 'A payment processed by Paytium.', 'paytium' ); ?></p>
             </label>
 
 			<?php
@@ -752,7 +764,7 @@ class PT_Post_Types {
 			if ( $payment->mode == 'test' ) {
 				?>
                 <label>
-                    <p class="howto pt-payment-intro test-mode-payment"><?php echo __( 'This payment was created in test mode!', 'paytium' ); ?></p>
+                    <p class="howto pt-payment-intro test-mode-payment"><?php echo esc_html__( 'This payment was created in test mode!', 'paytium' ); ?></p>
                 </label>
 				<?php
 			}
@@ -761,7 +773,7 @@ class PT_Post_Types {
 			?>
             <div class="misc-pub-section">
             <label>
-                <p class="howto pt-payment-intro"><?php echo __( 'A form without payment, processed by Paytium.', 'paytium' ); ?></p>
+                <p class="howto pt-payment-intro"><?php echo esc_html__( 'A form without payment, processed by Paytium.', 'paytium' ); ?></p>
             </label>
 
 			<?php

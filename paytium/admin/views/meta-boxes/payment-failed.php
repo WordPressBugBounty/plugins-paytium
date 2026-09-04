@@ -8,6 +8,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 ?>
 <div class="pt-failed-meta-box">
-    <span class="pt-failed-meta-box-message"><?php echo 'Creating payment failed: ' . get_post_meta($payment->id, '_pt_payment_error', true); ?></span>
+    <span class="pt-failed-meta-box-message"><?php echo esc_attr( 'Creating payment failed: ' . get_post_meta($payment->id, '_pt_payment_error', true) ); ?></span>
 </div>
 

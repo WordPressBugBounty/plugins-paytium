@@ -12,9 +12,9 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
-$general = get_option( 'pt_settings_default' );
+$pt_general = get_option( 'pt_settings_default' );
 
-if ( empty( $general['uninstall_save_settings'] ) ) {
+if ( empty( $pt_general['uninstall_save_settings'] ) ) {
 	delete_option( 'pt_settings_master' );
 	delete_option( 'pt_settings_default' );
 	delete_option( 'pt_settings_keys' );

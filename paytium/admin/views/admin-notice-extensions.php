@@ -35,8 +35,8 @@ $extensions_descriptions =
 		<?php echo esc_attr($extensions_descriptions[ array_rand( $extensions_descriptions ) ]); ?>
 		<?php __( ' Or other features and integrations?', 'paytium' ); ?>
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=pt-extensions' ) ); ?>" class="button-primary"
-		   style="vertical-align: baseline;"><?php _e( 'View extra features', 'paytium' ); ?> &rarr;</a>
+		   style="vertical-align: baseline;"><?php esc_html_e( 'View extra features', 'paytium' ); ?> &rarr;</a>
 		<a href="<?php echo esc_url( add_query_arg( 'pt-dismiss-extensions-nag', 1 ) ); ?>"
-		   class="button-secondary"><?php _e( 'Hide this', 'paytium' ); ?></a>
+		   class="button-secondary"><?php esc_html_e( 'Hide this', 'paytium' ); ?></a>
 	</p>
 </div>

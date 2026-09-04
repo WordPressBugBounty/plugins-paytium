@@ -72,13 +72,13 @@ class PT_Payment {
 	 * @since 1.3.0
 	 * @var string  Subscription
 	 */
-	public $subscription;
+	public $subscription = '';
 
 	/**
 	 * @since 1.3.0
 	 * @var string  Subscription
 	 */
-	public $subscription_id;
+	public $subscription_id = '';
 
 	/**
 	 * @since 2.2.0
@@ -90,61 +90,61 @@ class PT_Payment {
 	 * @since 1.3.0
 	 * @var string  Subscription interval
 	 */
-	public $subscription_interval;
+	public $subscription_interval = '';
 
 	/**
 	 * @since 1.3.0
 	 * @var string  Subscription times
 	 */
-	public $subscription_times;
+	public $subscription_times = '';
 
 	/**
 	 * @since 2.1.0
 	 * @var string  Subscription first amount
 	 */
-	public $subscription_first_payment;
+	public $subscription_first_payment = '';
 
 	/**
 	 * @since 2.1.0
 	 * @var string  Subscription recurring amount
 	 */
-	public $subscription_recurring_payment;
+	public $subscription_recurring_payment = '';
 
 	/**
 	 * @since 1.4.0
 	 * @var string  Subscription start date
 	 */
-	public $subscription_start_date;
+	public $subscription_start_date = '';
 
 	/**
 	 * @since 1.4.0
 	 * @var string  Subscription payment status
 	 */
-	public $subscription_payment_status;
+	public $subscription_payment_status = '';
 
 	/**
 	 * @since 1.4.0
 	 * @var string  Subscription webhook
 	 */
-	public $subscription_webhook;
+	public $subscription_webhook = '';
 
 	/**
 	 * @since 1.4.0
 	 * @var string  Subscription error
 	 */
-	public $subscription_error;
+	public $subscription_error = '';
 
 	/**
 	 * @since 2.0.0
 	 * @var string  Subscription status
 	 */
-	public $subscription_status;
+	public $subscription_status = '';
 
 	/**
 	 * @since 2.0.0
 	 * @var string  Subscription cancelled date
 	 */
-	public $subscription_cancelled_date;
+	public $subscription_cancelled_date = '';
 
 	/**
 	 * @since 1.3.0
@@ -218,17 +218,25 @@ class PT_Payment {
 		$this->mollie_subscription_id         = isset( $meta['_mollie_subscription_id'] ) ? reset( $meta['_mollie_subscription_id'] ) : '';
 		if ($this->subscription == '' && $this->subscription_id != '') {
 
-			$this->subscription_interval          = get_post_meta($this->subscription_id, '_subscription_interval', true );
-			$this->subscription_times             = get_post_meta($this->subscription_id, '_subscription_times', true ) ? get_post_meta($this->subscription_id, '_subscription_times', true ) : 'Unlimited';
-			$this->subscription_first_payment     = get_post_meta($this->subscription_id, '_subscription_first_payment', true );
-			$this->subscription_recurring_payment = get_post_meta($this->subscription_id, '_subscription_recurring_payment', true );
-			$this->subscription_start_date        = get_post_meta($this->subscription_id, '_subscription_start_date', true );
-			$this->subscription_status            = get_post_meta($this->subscription_id, '_subscription_status', true );
-			$this->subscription_cancelled_date    = get_post_meta($this->subscription_id, '_subscription_cancelled_date', true );
-			$this->subscription_webhook           = get_post_meta($this->subscription_id, '_subscription_webhook', true );
-			$this->subscription_error             = get_post_meta($this->subscription_id, '_subscription_error', true );
-			$payments = unserialize(get_post_meta($this->subscription_id, '_payments', true));
-			if ($payments && in_array($this->id, $payments)) {
+			$sub_meta = get_post_meta( $this->subscription_id );
+			$this->subscription_interval          = isset( $sub_meta['_subscription_interval'][0] )          ? $sub_meta['_subscription_interval'][0]          : '';
+			$_sub_times                           = isset( $sub_meta['_subscription_times'][0] )              ? $sub_meta['_subscription_times'][0]              : '';
+			$this->subscription_times             = $_sub_times ?: 'Unlimited';
+			$this->subscription_first_payment     = isset( $sub_meta['_subscription_first_payment'][0] )     ? $sub_meta['_subscription_first_payment'][0]     : '';
+			$this->subscription_recurring_payment = isset( $sub_meta['_subscription_recurring_payment'][0] ) ? $sub_meta['_subscription_recurring_payment'][0] : '';
+			$this->subscription_start_date        = isset( $sub_meta['_subscription_start_date'][0] )        ? $sub_meta['_subscription_start_date'][0]        : '';
+			$this->subscription_status            = isset( $sub_meta['_subscription_status'][0] )            ? $sub_meta['_subscription_status'][0]            : '';
+			$this->subscription_cancelled_date    = isset( $sub_meta['_subscription_cancelled_date'][0] )    ? $sub_meta['_subscription_cancelled_date'][0]    : '';
+			$this->subscription_webhook           = isset( $sub_meta['_subscription_webhook'][0] )           ? $sub_meta['_subscription_webhook'][0]           : '';
+			$this->subscription_error             = isset( $sub_meta['_subscription_error'][0] )             ? $sub_meta['_subscription_error'][0]             : '';
+			// $sub_meta comes from get_post_meta() with no key, so WordPress has already
+			// peeled the first serialization layer; the helper peels the second and
+			// guarantees an array. See pt_normalize_payments_list() for why there are two.
+			$payments = pt_normalize_payments_list( isset( $sub_meta['_payments'][0] ) ? $sub_meta['_payments'][0] : '' );
+
+			$this->subscription_payment_status    = '';
+
+			if ( $payments && in_array( $this->id, $payments ) ) {
 				$this->subscription_payment_status    = $payments[0] == $this->id ? 'initial' : 'renewal';
 			}
 		}
@@ -691,7 +699,7 @@ class PT_Payment {
 			if (isset($row['label'],$row['value'])) :
 			?><div class='option-group'>
 
-				<label for='claimer'><?php _e( $row['label'], 'paytium' ); ?>:</label>
+				<label for='claimer'><?php echo esc_html( $row['label'] ); ?>:</label>
 				<span class="option-value"><?php echo isset($row['value']) && is_array($row['value']) ? esc_html(reset( $row['value'] )) : '' ?></span>
 
 			</div><?php
@@ -822,7 +830,7 @@ class PT_Payment {
 				'_pt_emails_last_order_status',
 				'_pt_no_payment',
 				'_pt-field-form-emails',
-				'_item-recurring-payment',
+//				'_item-recurring-payment',
 			);
 			$continue = false;
 			foreach ( $exclude_partials as $v ) {
@@ -1159,7 +1167,17 @@ class PT_Payment {
 			return;
 		}
 
+		// Do not attempt Mollie-based correction for Stripe renewals
+		if ( empty( $this->mollie_subscription_id ) ) {
+			return;
+		}
+
 		$pt_subscription_id = pt_get_subscription_id_by_mollie_subscription_id( $this->mollie_subscription_id );
+
+		// If no Paytium subscription could be resolved, do not overwrite existing subscription meta
+		if ( empty( $pt_subscription_id ) ) {
+			return;
+		}
 
 		if ( $this->subscription_id == null || ( (int) $this->subscription_id !== (int) $pt_subscription_id ) ) {
 
@@ -1167,7 +1185,7 @@ class PT_Payment {
 				'subscription_id' => $pt_subscription_id,
 			) );
 
-			$payments   = unserialize( get_post_meta( $pt_subscription_id, '_payments', true ) );
+			$payments   = pt_get_subscription_payments( $pt_subscription_id );
 			$payments[] = (int) $this->id;
 			asort( $payments );
 
@@ -1192,8 +1210,8 @@ class PT_Payment {
 
 		// Check that payment/subscription should be updated or not
 		$pt_subscription_id = $this->subscription_id;
-		$payments           = unserialize( get_post_meta( $pt_subscription_id, '_payments', true ) );
-		$first_payment_id   = is_array($payments) ? $payments[0] : $payments;
+		$payments           = pt_get_subscription_payments( $pt_subscription_id );
+		$first_payment_id   = isset( $payments[0] ) ? $payments[0] : 0;
 
 		if ( $this->status == 'open' && $this->subscription_payment_status != 'renewal' ) {
 			return;

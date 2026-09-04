@@ -18,7 +18,7 @@ function paytium_add_notification( $notification_id, $notification ) {
 
 	if (get_option('paytium_notifications')) {
 
-		$paytium_notifications = unserialize(get_option('paytium_notifications'));
+		$paytium_notifications = pt_unserialize_to_array(get_option('paytium_notifications'));
 		$paytium_notifications[$notification_id] = $notification;
 
 		update_option('paytium_notifications', serialize($paytium_notifications));
@@ -41,7 +41,7 @@ function paytium_check_notifications( $slug ) {
 
 	if ( get_option( 'paytium_notifications' ) ) {
 
-		$paytium_notifications = unserialize( get_option( 'paytium_notifications' ) );
+		$paytium_notifications = pt_unserialize_to_array( get_option( 'paytium_notifications' ) );
 
 		foreach ( $paytium_notifications as $notification ) {
 
@@ -67,13 +67,13 @@ function paytium_display_notifications() {
 
 	if (get_option('paytium_notifications')) {
 
-		$paytium_notifications = unserialize(get_option('paytium_notifications'));
+		$paytium_notifications = pt_unserialize_to_array(get_option('paytium_notifications'));
 
 		foreach ($paytium_notifications as $notification) {
 
 			if ($notification['status'] == 'open') {
-				echo '<div class="notice notice-warning is-dismissible paytium-notice" data-id="'.$notification['id'].'"><p>'.
-					 __( $notification['message'], 'paytium' ) .
+				echo '<div class="notice notice-warning is-dismissible paytium-notice" data-id="' . esc_attr( $notification['id'] ) . '"><p>' .
+					 esc_html( $notification['message'] ) .
 					 '</p></div>';
 			}
 		}
@@ -90,8 +90,8 @@ function paytium_notice_dismiss() {
 
 	check_ajax_referer( 'paytium-ajax-nonce', 'nonce' );
 
-	$paytium_notice_id = isset($_POST['id']) ? $_POST['id'] : false;
-	$paytium_notifications = get_option('paytium_notifications') ? unserialize(get_option('paytium_notifications')) : false;
+	$paytium_notice_id = isset($_POST['id']) ? absint( wp_unslash( $_POST['id'] ) ) : false;
+	$paytium_notifications = get_option('paytium_notifications') ? pt_unserialize_to_array(get_option('paytium_notifications')) : false;
 
 	if (current_user_can('administrator') && $paytium_notice_id && $paytium_notifications) {
 

@@ -16,7 +16,7 @@
  * Plugin Name: Paytium
  * Plugin URI: https://www.paytium.nl
  * Description: Paytium, making payments in WordPress even more awesome!
- * Version: 5.0.3
+ * Version: 5.0.4
  * Author: David de Boer
  * Author URI: https://www.paytium.nl
  * License: GPL-2.0+
@@ -53,7 +53,7 @@ if ( class_exists( 'Paytium' ) ) {
 	}
 
 	if ( ! defined( 'PT_VERSION' ) ) {
-		define( 'PT_VERSION', '5.0.3' );
+		define( 'PT_VERSION', '5.0.4' );
 	}
 
 	if ( ! defined( 'PT_NAME' ) ) {
@@ -71,6 +71,7 @@ if ( class_exists( 'Paytium' ) ) {
 	/**
 	 * Registration & activation hook
 	 */
+	// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- renaming a registered hook callback is a silent breaking change for customer sites that remove_action() it; deferred to a major version.
 	function install_paytium() {
 
 		// Add value to indicate that we should show admin notice for setup wizard.
@@ -88,13 +89,17 @@ if ( class_exists( 'Paytium' ) ) {
 		update_option( 'paytium_always_enqueue', 1 );
 
 		if ( ! function_exists( 'curl_version' ) ) {
-			wp_die( sprintf( __( 'You must have the cURL extension enabled in order to run %s. Please enable cURL and try again. <a href="%s">Return to Plugins</a>.', 'paytium' ),
-				PT_NAME, get_admin_url( '', 'plugins.php' ) ) );
+			wp_die( sprintf(
+			/* translators: %1$s: plugin name, %2$s: URL of the Plugins page. */
+			wp_kses_post( __( 'You must have the cURL extension enabled in order to run %1$s. Please enable cURL and try again. <a href="%2$s">Return to Plugins</a>.', 'paytium' ) ),
+			esc_html( PT_NAME ),
+			esc_url( get_admin_url( '', 'plugins.php' ) )
+		) );
 		}
 
 		// Remove old log file format
 		if ( file_exists( plugin_dir_path( __FILE__ ) . 'logs.txt' ) ) {
-			unlink( plugin_dir_path( __FILE__ ) . 'logs.txt' );
+			wp_delete_file( plugin_dir_path( __FILE__ ) . 'logs.txt' );
 		}
 
 	}
@@ -104,11 +109,17 @@ if ( class_exists( 'Paytium' ) ) {
 	/**
 	 * Load plugin text domain (for translation files)
 	 */
-	load_plugin_textdomain(
-		'paytium',
-		null,
-		dirname( plugin_basename( PT_MAIN_FILE ) ) . '/languages/'
-	);
+	function paytium_load_textdomain() {
+
+		load_plugin_textdomain(
+			'paytium',
+			false,
+			dirname( plugin_basename( PT_MAIN_FILE ) ) . '/languages/'
+		);
+
+	}
+
+	add_action( 'init', 'paytium_load_textdomain' );
 
 	/**
 	 * Get Paytium class.

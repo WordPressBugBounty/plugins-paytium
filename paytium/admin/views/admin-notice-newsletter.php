@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<div class="subscribe-form ml-block-success" style="display:none">
 			<div class="form-section mb0">
 				<p>
-					<?php _e( 'Thank you for subscribing to the Paytium newsletter!', 'paytium' ); ?>
+					<?php esc_html_e( 'Thank you for subscribing to the Paytium newsletter!', 'paytium' ); ?>
 				</p>
 			</div>
 		</div>
@@ -34,14 +34,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<div class="form-group ml-field-email ml-validate-required ml-validate-email"
 					     style="display: inline">
 						<span
-							class="subscribe-message"><?php _e( 'Subscribe for iDEAL news and Paytium updates:', 'paytium' ); ?></span>
+							class="subscribe-message"><?php esc_html_e( 'Subscribe for iDEAL news and Paytium updates:', 'paytium' ); ?></span>
 						<input style="display: inline" type="text" name="fields[email]" class="form-control"
-						       placeholder="Email*" value="<?php echo wp_get_current_user()->user_email; ?>">
+						       placeholder="Email*" value="<?php echo esc_attr( wp_get_current_user()->user_email ); ?>">
 					</div>
 				</div>
 				<div class="form-section horizontal" style="display: inline">
 					<button type="submit" class="primary">
-						<?php _e( 'Subscribe now!', 'paytium' ); ?>
+						<?php esc_html_e( 'Subscribe now!', 'paytium' ); ?>
 					</button>
 
 					<button disabled="disabled" style="display: none;" type="button" class="loading">
@@ -52,7 +52,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 
 				<a href="<?php echo esc_url( add_query_arg( 'pt-dismiss-newsletter-nag', 1 ) ); ?>"
-				   class="button-secondary"><?php _e( 'Hide this', 'paytium' ); ?></a>
+				   class="button-secondary"><?php esc_html_e( 'Hide this', 'paytium' ); ?></a>
 
 				<div class="clearfix" style="clear: both;"></div>
 				<input type="hidden" name="ml-submit" value="1"/>

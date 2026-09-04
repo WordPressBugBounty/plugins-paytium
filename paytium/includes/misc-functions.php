@@ -70,21 +70,29 @@ function paytium_logger( $message, $file = '', $line = '' ) {
 	$line = $line ? $line : __LINE__;
 
 	if ( wp_mkdir_p($pt_log_dir) && ! file_exists(  $pt_log_dir . '.htaccess' ) ) {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions -- the debug logger APPENDS single lines and is deliberately best-effort; WP_Filesystem may not be initialised this early, can prompt for FTP credentials, and offers no append mode.
 		$fh = @fopen(  $pt_log_dir  . '.htaccess', 'w' );
 		if ( $fh ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions -- the debug logger APPENDS single lines and is deliberately best-effort; WP_Filesystem may not be initialised this early, can prompt for FTP credentials, and offers no append mode.
 			fwrite( $fh, 'deny from all' );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions -- the debug logger APPENDS single lines and is deliberately best-effort; WP_Filesystem may not be initialised this early, can prompt for FTP credentials, and offers no append mode.
 			fclose( $fh );
 		}
 	}
 
-    $date = date('d/m/y h:i:s', time());
-    $newfile = $pt_log_dir . 'paytium-' . date('Y-m-d') . '.txt';
+    $date = gmdate('d/m/y h:i:s', time());
+    $newfile = $pt_log_dir . 'paytium-' . gmdate('Y-m-d') . '.txt';
     $text = '[' . $date . ' UTC]['.$file.':'.$line.'] '. $message . PHP_EOL;
 
-    // Check that file exists and can be opened
-	if ( ( $fht = @fopen( $newfile, 'rb' ) !== false ) && file_exists( $newfile ) ) {
-		$fh = fopen( $newfile, 'a' );
+    // Append to the day's log file, creating it when it does not exist yet.
+	// Silently skipped when the file cannot be opened (unwritable directory for example).
+	// phpcs:ignore WordPress.WP.AlternativeFunctions -- the debug logger APPENDS single lines and is deliberately best-effort; WP_Filesystem may not be initialised this early, can prompt for FTP credentials, and offers no append mode.
+	$fh = @fopen( $newfile, 'a' );
+
+	if ( $fh !== false ) {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions -- the debug logger APPENDS single lines and is deliberately best-effort; WP_Filesystem may not be initialised this early, can prompt for FTP credentials, and offers no append mode.
 		fwrite( $fh, $text );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions -- the debug logger APPENDS single lines and is deliberately best-effort; WP_Filesystem may not be initialised this early, can prompt for FTP credentials, and offers no append mode.
 		fclose( $fh );
 	}
 }
@@ -103,7 +111,10 @@ function paytium_logger( $message, $file = '', $line = '' ) {
  */
 function pt_user_amount_to_float( $amount ) {
 	$decimals = apply_filters( 'paytium_amount_decimals', 2 );
-	$amount = floatval( str_replace( ',', '.', $amount ) );
+	// Cast first: this is called with null in places, and str_replace() with a null
+	// subject is deprecated on PHP 8.1+. (string) null is '' and floatval('') is 0.0,
+	// so the result is unchanged.
+	$amount = floatval( str_replace( ',', '.', (string) $amount ) );
 	$amount = round( $amount, $decimals );
 
 	return $amount;
@@ -156,6 +167,7 @@ function pt_float_amount_to_currency( $amount, $currency = 'EUR', $add_currency_
  * @return mixed
  * @since 4.3.0
  */
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- renaming a registered hook callback is a silent breaking change for customer sites that remove_action() it; deferred to a major version.
 function get_paytium_currency_symbol($currency_code) {
 
 	$currency_symbols = array(
@@ -235,7 +247,7 @@ add_filter( 'the_content', 'pt_shortcode_fix' );
 function pt_is_localhost() {
 
 	$whitelist = array ( '127.0.0.1', '::1' );
-	if ( in_array( $_SERVER['REMOTE_ADDR'], $whitelist ) ) {
+	if ( in_array( isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '', $whitelist, true ) ) {
 		return true;
 	}
 

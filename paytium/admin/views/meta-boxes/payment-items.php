@@ -11,12 +11,12 @@ if ( ! defined( 'ABSPATH' ) ) {
     <table class="widefat payment-items-table" style="width: 100%">
     <thead>
     <tr>
-        <th><?php _e( 'Item', 'paytium' ); ?></th>
-        <th><?php _e( 'Amount', 'paytium' ); ?></th>
+        <th><?php esc_html_e( 'Item', 'paytium' ); ?></th>
+        <th><?php esc_html_e( 'Amount', 'paytium' ); ?></th>
         <?php if ( $payment->get_tax_total() ) : ?>
-            <th><?php _e( 'Taxes', 'paytium' ); ?></th>
+            <th><?php esc_html_e( 'Taxes', 'paytium' ); ?></th>
         <?php endif; ?>
-        <th><?php _e( 'Total', 'paytium' ); ?></th>
+        <th><?php esc_html_e( 'Total', 'paytium' ); ?></th>
     </tr>
     </thead>
 
@@ -40,7 +40,7 @@ foreach ($payment->get_items() as $item) :
 endforeach;
 if ($payment->is_discount()) : ?>
     <tr>
-        <td>Discount (<?php echo $payment->get_discount_value() ?>)</td>
+        <td>Discount (<?php echo esc_attr( $payment->get_discount_value() ) ?>)</td>
         <td></td>
         <td></td>
 <!--        <td style="color:darkred;text-align:left">-->

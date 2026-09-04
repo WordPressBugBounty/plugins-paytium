@@ -63,7 +63,7 @@ class PT_Admin_AJAX {
 			die();
 		}
 
-		$post_data = wp_parse_args( $_POST['form'] );
+		$post_data = wp_parse_args( map_deep( wp_unslash( $_POST['form'] ), 'sanitize_text_field' ) );
 
 		$args     = array (
 			'name'         => sanitize_text_field( $post_data['name'] ),
@@ -78,7 +78,7 @@ class PT_Admin_AJAX {
 
 		// An error occurred in the initial API call
 		if ( strpos( $response['body'], 'error' ) !== false ) {
-			die( json_encode( array (
+			die( wp_json_encode( array (
 				'status'  => 'error',
 				'message' => '<div class="pt-alert pt-alert-danger">' . $this->convert_api_error_messages($response['body'] ) . '</div>',
 			) ) );
@@ -92,7 +92,7 @@ class PT_Admin_AJAX {
 			set_transient( 'paytium_mollie_password', $response_data->data->password, WEEK_IN_SECONDS * 2 ); // 2 week expiration
 			update_option( 'paytium_mollie_partner_id', $response_data->data->partner_id );
 
-			die( json_encode( array (
+			die( wp_json_encode( array (
 				'status'  => 'success',
 				'message' => '<div class="pt-alert pt-alert-success">' . esc_html( $response_data->data->resultmessage ) . '</div>',
 			) ) );
@@ -120,20 +120,20 @@ class PT_Admin_AJAX {
 
 			if ( (get_option('paytium_test_api_key') || get_option('paytium_live_api_key'))
 				&& isset($_POST['existing_account']) && $_POST['existing_account'] == 1 ) {
-				die( wp_send_json( array (
+				wp_send_json( array (
 					'status'  => 'success'
-				) ) );
+				) );
 			}
 			else {
 				// Make sure username and password are set
 				if ( $args['username'] == false || $args['password'] == false) {
-					die( wp_send_json( array (
+					wp_send_json( array (
 						'status'  => 'error'
-					) ) );
+					) );
 				} else {
-					die( wp_send_json( array (
+					wp_send_json( array (
 						'status'  => 'success'
-					) ) );
+					) );
 				}
 			}
 		}
@@ -155,7 +155,7 @@ class PT_Admin_AJAX {
 			die();
 		}
 
-		$post_data = wp_parse_args( $_POST['form'] );
+		$post_data = wp_parse_args( map_deep( wp_unslash( $_POST['form'] ), 'sanitize_text_field' ) );
 
 		$args     = array (
 			'username' => get_transient( 'paytium_mollie_username' ),
@@ -169,7 +169,7 @@ class PT_Admin_AJAX {
 
 		// An error occurred in the initial API call
 		if ( strpos( $response['body'], 'error' ) !== false ) {
-			die( json_encode( array (
+			die( wp_json_encode( array (
 				'status'  => 'error',
 				'message' => '<div class="pt-alert pt-alert-danger">' . $this->convert_api_error_messages( $response['body'] ) . __(' Or maybe the account is not activated yet?', 'paytium' ) . '</div>',
 			) ) );
@@ -184,7 +184,7 @@ class PT_Admin_AJAX {
 			update_option( 'paytium_test_api_key', $response_data->data->profile->api_keys->test );
 			update_option( 'paytium_live_api_key', $response_data->data->profile->api_keys->live );
 
-			die( json_encode( array (
+			die( wp_json_encode( array (
 				'status'  => 'success',
 				'message' => '<div class="pt-alert pt-alert-success">' . esc_html( $response_data->data->resultmessage ) . '</div>',
 			) ) );
@@ -210,11 +210,11 @@ class PT_Admin_AJAX {
 			die();
 		}
 		// Save profile data
-		update_option( 'paytium_mollie_website_profile', esc_attr($_POST['hash']) );
-		update_option( 'paytium_test_api_key', esc_attr($_POST['test_key']) );
-		update_option( 'paytium_live_api_key', esc_attr($_POST['live_key']) );
+		update_option( 'paytium_mollie_website_profile', isset( $_POST['hash'] ) ? sanitize_text_field( wp_unslash( $_POST['hash'] ) ) : '' );
+		update_option( 'paytium_test_api_key', isset( $_POST['test_key'] ) ? sanitize_text_field( wp_unslash( $_POST['test_key'] ) ) : '' );
+		update_option( 'paytium_live_api_key', isset( $_POST['live_key'] ) ? sanitize_text_field( wp_unslash( $_POST['live_key'] ) ) : '' );
 
-		die( wp_send_json( array ( 'status' => 'success' ) ) );
+		wp_send_json( array ( 'status' => 'success' ) );
 	}
 
 	/**
@@ -240,10 +240,10 @@ class PT_Admin_AJAX {
 			// An error occurred in the initial API call
 			if ( strpos( $response['body'], 'error' ) !== false ) {
 
-				die( wp_send_json( array (
+				wp_send_json( array (
 					'status'  => 'error',
 					'message' => '<div class="pt-alert pt-alert-danger">' . __( 'Can\'t log in, did you click the link in the activation email?', 'paytium' ) . '</div>',
-				) ) );
+				) );
 			}
 
 			// Passed initial API call and got response from Mollie
@@ -251,10 +251,10 @@ class PT_Admin_AJAX {
 
 				$response_data = json_decode( $response['body'] );
 
-				die( wp_send_json( array (
+				wp_send_json( array (
 					'status'   => 'success',
 					'profiles' => $response_data->data->items
-				) ) );
+				) );
 
 			}
 
@@ -275,12 +275,12 @@ class PT_Admin_AJAX {
 		$payments = pt_get_payments( array ( 'posts_per_page' ) );
 
 		if ( ! empty( $payments ) ) :
-			die( json_encode( array (
+			die( wp_json_encode( array (
 				'status'  => 'success',
 				'message' => '<div class="pt-alert pt-alert-success">' . __( 'A test payment has been found.', 'paytium' ) . '</div>',
 			) ) );
 		else :
-			die( json_encode( array (
+			die( wp_json_encode( array (
 				'status'  => 'error',
 				'message' => '<div class="pt-alert pt-alert-danger">' . __( 'No test payment found, please try again.', 'paytium' ) . '</div>',
 			) ) );
@@ -311,7 +311,7 @@ class PT_Admin_AJAX {
 
 		if (current_user_can('edit_posts')) {
 
-			$attachment_id = isset($_POST['attachment_id']) ? $_POST['attachment_id'] : false;
+			$attachment_id = isset($_POST['attachment_id']) ? absint( wp_unslash( $_POST['attachment_id'] ) ) : false;
 
 			if ($attachment_id) {
 
@@ -333,14 +333,16 @@ class PT_Admin_AJAX {
 
 		if (current_user_can('administrator')) {
 
-			$test_api_key = isset($_POST['test_api_key']) ? $_POST['test_api_key'] : false;
-			$live_api_key = isset($_POST['live_api_key']) ? $_POST['live_api_key'] : false;
+			$test_api_key = isset( $_POST['test_api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['test_api_key'] ) ) : false;
+			$live_api_key = isset( $_POST['live_api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['live_api_key'] ) ) : false;
 
-			if ($test_api_key) {
-				update_option('paytium_test_api_key',$test_api_key);
+			if ( $test_api_key ) {
+				update_option( 'paytium_test_api_key', $test_api_key );
 			}
-			if ($test_api_key) {
-				update_option('paytium_live_api_key',$live_api_key);
+			// Was 'if ( $test_api_key )' - the live key could only be saved when a
+			// test key happened to be posted alongside it.
+			if ( $live_api_key ) {
+				update_option( 'paytium_live_api_key', $live_api_key );
 			}
 
 			echo 'success';

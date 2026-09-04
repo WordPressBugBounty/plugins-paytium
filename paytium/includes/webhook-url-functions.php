@@ -30,7 +30,8 @@ function pt_payment_update_webhook( $request ) {
 
 		global $pt_mollie;
 
-		$mollie_payment_id = isset($_POST['id']) ? preg_replace('/[^\w]/', '', $_POST['id']) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- the Mollie webhook is a server-to-server callback and cannot carry a WP nonce; authenticity is established by re-fetching the payment through the Mollie API below.
+		$mollie_payment_id = isset($_POST['id']) ? preg_replace('/[^\w]/', '', sanitize_text_field( wp_unslash( $_POST['id'] ) )) : '';
 
 		try {
 
@@ -159,7 +160,7 @@ function pt_payment_update_webhook( $request ) {
 				$this_payment = pt_get_payment($old_payment_post_id);
 				$this_payment->set_status( $status );
 
-				$subscription_payments = unserialize(get_post_meta((int)$pt_subscription_id, '_payments', true));
+				$subscription_payments = pt_get_subscription_payments( (int)$pt_subscription_id );
 				$subscription_payments[] = $old_payment_post_id;
 
 				$update_subscription = array();
@@ -235,7 +236,7 @@ function pt_payment_update_webhook( $request ) {
 			paytium_logger( $payment->id.'/'.$mollie->id.': ', __FILE__,__LINE__);
 
 			if($payment->status == 'paid' && !$payment->subscription_id) {
-				update_user_meta( get_post($payment->id)->post_author, '_last_paid_date', date('Y-m-d H:i:s'));
+				update_user_meta( get_post($payment->id)->post_author, '_last_paid_date', gmdate('Y-m-d H:i:s'));
 			}
 			//
 			// END REGULAR PAYMENT PROCESSING - Update status and payment method for regular payments.
@@ -509,7 +510,7 @@ function pt_set_http_response_code_and_exit ($status_code) {
 function pt_get_new_payment_status($mollie) {
 
 	if (!empty($mollie->amountRefunded) && $mollie->amountRefunded->value >= 1) {
-		paytium_logger(print_r($mollie->amountRefunded->value,true), __FILE__,__LINE__);
+		paytium_logger( $mollie->amountRefunded->value, __FILE__, __LINE__ );
 		$status = 'refunded';
 	}
 	elseif (!empty($mollie->amountChargedBack) && $mollie->amountChargedBack->value >= 1) {

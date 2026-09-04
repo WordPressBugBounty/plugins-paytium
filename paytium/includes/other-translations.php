@@ -22,6 +22,7 @@ __( 'You already have Paytium Plus, Pro or Premium enabled. You only need one of
  * Paytium License Library
  */
 
+/* translators: %s: value inserted at runtime. */
 __( '%s license:', 'paytium' );
 __( 'Your license key', 'paytium' );
 __( 'Your license key has expired, please renew it through our system', 'paytium' );
@@ -31,11 +32,14 @@ __( 'Enter your license info and press Enter to activate it', 'paytium' );
 __( 'Your license has been revoked', 'paytium' );
 __( 'Invalid license key, please verify your license and try again', 'paytium' );
 __( 'Your license is not active for this URL', 'paytium' );
+/* translators: %s: value inserted at runtime. */
 __( 'This license is not valid for %s', 'paytium' );
 __( 'Your license has reached its activation limit', 'paytium' );
 __( 'Something went wrong, please verify everything and try again', 'paytium' );
+/* translators: %s: value inserted at runtime. */
 __( 'There is a new version of %s available.', 'paytium' );
 __( 'Please enter a valid license to receive this update.', 'paytium' );
+/* translators: %s: value inserted at runtime. */
 __( 'Your license for %s is active.', 'paytium' );
 __( 'Deactivate license', 'paytium');
 
@@ -48,6 +52,7 @@ __( 'Amount', 'paytium' );
 __( 'Total revenue', 'paytium' );
 __( 'Start date', 'paytium' );
 __( 'Renewal date', 'paytium' );
+/* translators: %s: value inserted at runtime. */
 __( 'Subscription #%d', 'paytium' );
 __( 'Subscription details', 'paytium' );
 __( 'Subscription first payment', 'paytium' );
@@ -78,7 +83,8 @@ __( 'Mode', 'paytium' );
 __( 'Custom fields', 'paytium' );
 __( 'Items', 'paytium' );
 __( 'Read more about exporting payments.', 'paytium' );
-__('Since Paytium 3.0 payments also have a payment source. This might influence the export of payments from before May 2019. %sRead more...%s', 'paytium' );
+/* translators: %1$s: value inserted at runtime, %2$s: value inserted at runtime. */
+__('Since Paytium 3.0 payments also have a payment source. This might influence the export of payments from before May 2019. %1$sRead more...%2$s', 'paytium' );
 __( 'Paytium Export', 'paytium' );
 __( 'Export payments', 'paytium' );
 __( 'Read the Paytium MailChimp manual.', 'paytium' );
@@ -96,6 +102,7 @@ __( 'Default Group ID ', 'paytium' );
 __( 'If you use Groups in MailChimp, set to what Group subscribers should be added by default. It\'s not required to set this here, it\'s okay if you only set the Group ID in the shortcode. And you can always override the group ID in the shortcode for specific payment forms.', 'paytium' );
 __( 'Add your MailChimp API key above and Paytium will get your MailChimp account details. Saves you a lot of clicking :)', 'paytium' );
 __( 'List:', 'paytium' );
+// phpcs:ignore WordPress.WP.I18n.NoHtmlWrappedStrings -- the markup is inside the msgid on purpose: '<b>Group category:</b>' IS translated in languages/paytium-nl_NL.mo. Splitting the tags out changes the msgid and would orphan that translation until the .po is regenerated and retranslated.
 __( '<b>Group category:</b>', 'paytium' );
 __( 'Group:', 'paytium' );
 __( 'Read the Paytium Zapier manual.', 'paytium' );
@@ -141,6 +148,7 @@ __( 'Paytium Emails', 'paytium' );
 __( 'Emails', 'paytium' );
 __( 'Email updated.', 'paytium' );
 __( 'Email updated.', 'paytium' );
+/* translators: %s: value inserted at runtime. */
 __( 'Email restored to revision from %s', 'paytium' );
 __( 'Email saved.', 'paytium' );
 __( 'Email saved.', 'paytium' );
@@ -181,15 +189,19 @@ __( 'Start number', 'paytium' );
 __( 'Invoice number prefix', 'paytium' );
 __( 'Invoice number postfix', 'paytium' );
 __( 'Invoice template', 'paytium' );
+/* translators: %s: value inserted at runtime. */
 __( 'Download invoice #%s', 'paytium' );
+/* translators: %s: value inserted at runtime. */
 __( 'invoice-%s.html', 'paytium' );
 __( 'invoices', 'paytium' );
+/* translators: %s: value inserted at runtime. */
 __( 'invoice-%s.html', 'paytium' );
 __( 'Read more about exporting invoices.', 'paytium' );
 __( 'Paytium Export Invoices', 'paytium' );
 __( 'Export invoices', 'paytium' );
 __( 'Invoice', 'paytium' );
 __( 'Export invoices', 'paytium' );
+/* translators: %s: value inserted at runtime. */
 __( 'View invoice #%s', 'paytium' );
 __( 'Statistics', 'paytium' );
 __( 'Revenue per day', 'paytium' );
@@ -228,4 +240,5 @@ __( 'Default List ID', 'paytium' );
 __( 'To what MailPoet List should subscribers be added by default? It\'s not required to set this here, it\'s okay if you only set the List ID in the shortcode. And you can always override the list ID in the shortcode for specific payment forms.', 'paytium' );
 __( 'Redirects', 'paytium' );
 __( 'Set a specific page redirect depending on the payment status. This is a global setting that can be overridden per form.', 'paytium' );
+/* translators: %s: value inserted at runtime. */
 __( 'Redirect after %s', 'paytium' );

@@ -208,6 +208,7 @@ class Paytium {
 					'admin_ajax_url' => admin_url( 'admin-ajax.php' ),
 					'amount_too_low' => __( 'No (valid) amount entered or amount is too low!', 'paytium' ),
 					'subscription_first_payment' => __( 'First payment:', 'paytium' ),
+					/* translators: %s: value inserted at runtime. */
 					'field_is_required' => __( 'Field \'%s\' is required!', 'paytium' ),
 					'processing_please_wait' => __( 'Processing, please wait...', 'paytium' ),
 					'validation_failed' => __( 'Validation failed, please try again.', 'paytium' ),
@@ -243,7 +244,7 @@ class Paytium {
 
 		if ( isset( $_SERVER['HTTP_ACCEPT_LANGUAGE'] ) ) {
 
-			$languages = explode( ",", $_SERVER['HTTP_ACCEPT_LANGUAGE'] );
+			$languages = explode( ",", sanitize_text_field( wp_unslash( $_SERVER['HTTP_ACCEPT_LANGUAGE'] ) ) );
 			$language  = strtolower( $languages[0] );
 		} else {
 			$language = '';
@@ -353,9 +354,11 @@ class Paytium {
 
 			if ((isset($_GET['page']) && $_GET['page'] == 'pt-statistics') && is_file( PT_PATH . 'features/statistics.php' ) ) {
 				wp_enqueue_script( $this->plugin_slug . '-chart', PT_URL . 'features/js/Chart.js', '', $this->version, true );
-				wp_enqueue_script( $this->plugin_slug . '-moment', PT_URL . 'features/js/moment.js', '', $this->version, true );
-				wp_enqueue_script( $this->plugin_slug . '-datepicker', PT_URL . 'features/js/datepicker.js', '', $this->version, true );
-				wp_enqueue_script( $this->plugin_slug . '-statistics', PT_URL . 'features/js/statistics.js', '', $this->version, true );
+				// WordPress core ships moment (2.29.1) as the 'moment' handle; bundling a copy
+				// trips the Plugin Check 'library_core_files' rule, so depend on core's.
+				wp_enqueue_script( 'moment' );
+				wp_enqueue_script( $this->plugin_slug . '-datepicker', PT_URL . 'features/js/datepicker.js', array( 'moment' ), $this->version, true );
+				wp_enqueue_script( $this->plugin_slug . '-statistics', PT_URL . 'features/js/statistics.js', array( 'moment' ), $this->version, true );
 			}
 
 			wp_enqueue_script( $this->plugin_slug . '-admin', PT_URL . 'admin/js/admin.js', array ( 'jquery' ), time(), true );
@@ -367,9 +370,11 @@ class Paytium {
 
 			if ((isset($_GET['page']) && $_GET['page'] == 'pt-statistics') && is_file( PT_PATH . 'features/statistics.php' ) ) {
 				wp_enqueue_script( $this->plugin_slug . '-chart', PT_URL . 'features/js/Chart.js', '', $this->version, true );
-				wp_enqueue_script( $this->plugin_slug . '-moment', PT_URL . 'features/js/moment.js', '', $this->version, true );
-				wp_enqueue_script( $this->plugin_slug . '-datepicker', PT_URL . 'features/js/datepicker.js', '', $this->version, true );
-				wp_enqueue_script( $this->plugin_slug . '-statistics', PT_URL . 'features/js/statistics.js', '', $this->version, true );
+				// WordPress core ships moment (2.29.1) as the 'moment' handle; bundling a copy
+				// trips the Plugin Check 'library_core_files' rule, so depend on core's.
+				wp_enqueue_script( 'moment' );
+				wp_enqueue_script( $this->plugin_slug . '-datepicker', PT_URL . 'features/js/datepicker.js', array( 'moment' ), $this->version, true );
+				wp_enqueue_script( $this->plugin_slug . '-statistics', PT_URL . 'features/js/statistics.js', array( 'moment' ), $this->version, true );
 			}
 
 			wp_enqueue_script( $this->plugin_slug . '-admin', PT_URL . 'admin/js/admin.js', array ( 'jquery' ), $this->version, true );
@@ -382,8 +387,10 @@ class Paytium {
 		}
 
 		if (is_file( PT_PATH . 'features/datepicker.php' ) && (get_post_type() == 'pt_payment' || get_current_screen()->post_type == 'pt_payment')) {
-			wp_enqueue_script( $this->plugin_slug . '-moment', PT_URL . 'features/js/moment.js', '', $this->version, true );
-			wp_enqueue_script( $this->plugin_slug . '-datepicker', PT_URL . 'features/js/datepicker.js', '', $this->version, true );
+			// WordPress core ships moment (2.29.1) as the 'moment' handle; bundling a copy
+			// trips the Plugin Check 'library_core_files' rule, so depend on core's.
+			wp_enqueue_script( 'moment' );
+			wp_enqueue_script( $this->plugin_slug . '-datepicker', PT_URL . 'features/js/datepicker.js', array( 'moment' ), $this->version, true );
 		}
 
 		if ('pt_subscription' == get_post_type() && is_file( PT_PATH . 'features/subscriptions.php' )) {
@@ -407,7 +414,8 @@ class Paytium {
 		) );
 
 		wp_localize_script( $this->plugin_slug . '-admin', 'paytium_localize_script_vars', array (
-			'not_entered_api_keys' => sprintf( __( 'No API key(s) entered, use the %sSetup Wizard%s or get the API keys from the %sMollie Dashboard%s.', 'paytium' ), '<a href="' . esc_url( admin_url( 'admin.php?page=pt-setup-wizard' ) ) . '">', '</a>', '<a href="https://my.mollie.com/dashboard/signup/335035">', '</a>' ),
+			/* translators: %1$s: opening link tag, %2$s: closing link tag, %3$s: opening link tag, %4$s: closing link tag. */
+			'not_entered_api_keys' => sprintf( __( 'No API key(s) entered, use the %1$sSetup Wizard%2$s or get the API keys from the %3$sMollie Dashboard%4$s.', 'paytium' ), '<a href="' . esc_url( admin_url( 'admin.php?page=pt-setup-wizard' ) ) . '">', '</a>', '<a href="https://my.mollie.com/dashboard/signup/335035">', '</a>' ),
 		) );
 
 	}
@@ -485,8 +493,13 @@ class Paytium {
 
 		if ( version_compare( $wp_version, $required_wp_version, '<' ) ) {
 			deactivate_plugins( PT_MAIN_FILE );
-			wp_die( sprintf( __( $this->get_plugin_title() . ' requires WordPress version <strong>' . $required_wp_version . '</strong> to run properly. ' .
-			                     'Please update WordPress before reactivating this plugin. <a href="%s">Return to Plugins</a>.', 'paytium' ), get_admin_url( '', 'plugins.php' ) ) );
+			wp_die( sprintf(
+				/* translators: %1$s: plugin name, %2$s: required WordPress version, %3$s: URL of the Plugins page. */
+				wp_kses_post( __( '%1$s requires WordPress version <strong>%2$s</strong> to run properly. Please update WordPress before reactivating this plugin. <a href="%3$s">Return to Plugins</a>.', 'paytium' ) ),
+				esc_html( $this->get_plugin_title() ),
+				esc_html( $required_wp_version ),
+				esc_url( get_admin_url( '', 'plugins.php' ) )
+			) );
 		}
 
 	}
@@ -668,9 +681,9 @@ class Paytium {
 	 */
 	public function includes() {
 
-		global $pt_mollie, $plugin_slug;
+		global $pt_mollie, $pt_plugin_slug;
 
-		$plugin_slug = $this->plugin_slug;
+		$pt_plugin_slug = $this->plugin_slug;
 
         // Include notification functions
 		include_once( PT_PATH . 'includes/notification-functions.php' );
@@ -1148,21 +1161,35 @@ class Paytium {
 
 			global $wpdb;
 
-			$request = "SELECT  {$wpdb->postmeta}.meta_value 
-            FROM {$wpdb->postmeta}
-            WHERE {$wpdb->postmeta}.post_id IN (
-                SELECT {$wpdb->posts}.ID
-                FROM {$wpdb->posts}
-                LEFT JOIN {$wpdb->postmeta}
-                ON {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id
-                WHERE ({$wpdb->posts}.post_title LIKE '%{$wp_query->query['s']}%' OR {$wpdb->postmeta}.meta_value LIKE '%{$wp_query->query['s']}%') AND {$wpdb->posts}.post_type LIKE 'pt_payment'
-            ) AND {$wpdb->postmeta}.meta_key LIKE '_subscription_id'
-            UNION
-                SELECT  {$wpdb->posts}.ID
-                FROM {$wpdb->posts}
-                LEFT JOIN {$wpdb->postmeta}
-                ON {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id
-                WHERE ({$wpdb->posts}.post_title LIKE '%{$wp_query->query['s']}%' OR {$wpdb->postmeta}.meta_value LIKE '%{$wp_query->query['s']}%') AND {$wpdb->posts}.post_type LIKE 'pt_subscription'";
+			// The search term used to be interpolated straight into the LIKE clauses.
+			// esc_like() also stops '_' and '%' inside a customer's search string from
+			// acting as wildcards. 'LIKE' on the fixed values became '=' - they carry no
+			// wildcards, and '_subscription_id' would otherwise match any first character.
+			$like = '%' . $wpdb->esc_like( $wp_query->query['s'] ) . '%';
+
+			$request = $wpdb->prepare(
+				"SELECT {$wpdb->postmeta}.meta_value
+				FROM {$wpdb->postmeta}
+				WHERE {$wpdb->postmeta}.post_id IN (
+					SELECT {$wpdb->posts}.ID
+					FROM {$wpdb->posts}
+					LEFT JOIN {$wpdb->postmeta}
+					ON {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id
+					WHERE ({$wpdb->posts}.post_title LIKE %s OR {$wpdb->postmeta}.meta_value LIKE %s)
+						AND {$wpdb->posts}.post_type = 'pt_payment'
+				) AND {$wpdb->postmeta}.meta_key = '_subscription_id'
+				UNION
+					SELECT {$wpdb->posts}.ID
+					FROM {$wpdb->posts}
+					LEFT JOIN {$wpdb->postmeta}
+					ON {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id
+					WHERE ({$wpdb->posts}.post_title LIKE %s OR {$wpdb->postmeta}.meta_value LIKE %s)
+						AND {$wpdb->posts}.post_type = 'pt_subscription'",
+				$like,
+				$like,
+				$like,
+				$like
+			);
 		}
 
 		return $request;
@@ -1176,8 +1203,8 @@ class Paytium {
         ?>
         <script>
             jQuery(function () {
-                jQuery("body.post-php.post-type-pt_payment .wrap h1").append('&nbsp;&nbsp;&nbsp;<a href="<?php echo esc_url(admin_url('edit.php?post_type=pt_payment')); ?>" class="page-title-action"><?php _e('Back to payments', 'paytium'); ?></a>');
-                jQuery("body.post-php.post-type-pt_subscription .wrap h1").append('&nbsp;&nbsp;&nbsp;<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=pt_subscription' ) ); ?>" class="page-title-action"><?php _e( 'Back to subscriptions', 'paytium' ); ?></a>');
+                jQuery("body.post-php.post-type-pt_payment .wrap h1").append('&nbsp;&nbsp;&nbsp;<a href="<?php echo esc_url(admin_url('edit.php?post_type=pt_payment')); ?>" class="page-title-action"><?php esc_html_e('Back to payments', 'paytium'); ?></a>');
+                jQuery("body.post-php.post-type-pt_subscription .wrap h1").append('&nbsp;&nbsp;&nbsp;<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=pt_subscription' ) ); ?>" class="page-title-action"><?php esc_html_e( 'Back to subscriptions', 'paytium' ); ?></a>');
             });
         </script>
         <?php
@@ -1190,6 +1217,7 @@ class Paytium {
 			return;
 		}
 
+		// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.NotInFooter -- block-editor scripts must load in the head; the editor registers the block before the footer runs.
 		wp_register_script(
 			$this->plugin_slug . '-shortcode',
 			PT_URL . 'admin/js/paytium-shortcode-block.js',
@@ -1224,7 +1252,7 @@ class Paytium {
 	 */
 	function pt_save_extra_user_profile_fields($user_id) {
 
-		if ( empty( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'update-user_' . $user_id ) ) {
+		if ( empty( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'update-user_' . $user_id ) ) {
 			return;
 		}
 

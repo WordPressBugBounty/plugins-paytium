@@ -1428,7 +1428,7 @@
                 //return false;
 
                 // Unbind original form submit trigger before calling again to "reset" it and submit normally.
-                ptForm.unbind('submit');
+                ptForm.off('submit');
                 ptForm.submit();
 
                 // Disable original payment button and change text for UI feedback while POST-ing to Mollie
@@ -1477,7 +1477,9 @@
                     dataType: 'json',
                     data: {
                         'action': "pt_ajax_check_item_limits",
-                        'data': data
+                        'data': data,
+                        'nonce': ptForm.find('[name="paytium_form_nonce"]').val(),
+                        'pt-form-id': ptForm.find('[name="pt-form-id"]').val()
                     },
                     success: function (response) {
 

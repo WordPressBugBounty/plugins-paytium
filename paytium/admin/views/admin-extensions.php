@@ -105,17 +105,17 @@ $extensions = array (
 
 			<div class="pt_extensions_wrap">
                 <p class="pt_extensions_wrap_intro">
-					<?php _e( 'Vote for new features in <strong>Paytium Plus</strong>! It\'s the professional version of Paytium, starting at €49 per year. You get three votes. The commercial version makes development and support of all versions sustainable, so you get a <strong>higher quality</strong> plugin.', 'paytium' ); ?></p>
+					<?php echo wp_kses_post( __( 'Vote for new features in <strong>Paytium Plus</strong>! It\'s the professional version of Paytium, starting at €49 per year. You get three votes. The commercial version makes development and support of all versions sustainable, so you get a <strong>higher quality</strong> plugin.', 'paytium' ) ); ?></p>
 
                 <p class="pt_extensions_wrap_intro">
-					<?php _e( 'By voting you are automatically subscribed to the Paytium newsletter, and you can unsubscribe at anytime.', 'paytium' ); ?>
+					<?php esc_html_e( 'By voting you are automatically subscribed to the Paytium newsletter, and you can unsubscribe at anytime.', 'paytium' ); ?>
                 </p>
 
-                <p class="pt_extensions_wrap_intro"><?php _e( 'Other suggestions? Send an email to <a href="mailto:support@paytium.nl">support@paytium.nl</a>.', 'paytium' ); ?>
+                <p class="pt_extensions_wrap_intro"><?php echo wp_kses_post( __( 'Other suggestions? Send an email to <a href="mailto:support@paytium.nl">support@paytium.nl</a>.', 'paytium' ) ); ?>
                 </p>
 
                 <p class="pt-votes-left" style="display: none;">
-					<?php _e( 'You have 3 votes left!', 'paytium' ); ?>
+					<?php esc_html_e( 'You have 3 votes left!', 'paytium' ); ?>
                 </p>
 
 				<ul class="products">
@@ -128,7 +128,7 @@ $extensions = array (
 
 							<?php if ( ! empty( $extension['image'] ) ) { ?>
 								<img
-									src=" <?php echo PT_URL . 'admin/extension_logos/' . str_replace( ' ', '', strtolower( $extension['key'] ) ) . '.png'; ?>"/>
+									src=" <?php echo esc_url( PT_URL . 'admin/extension_logos/' . str_replace( ' ', '', strtolower( $extension['key'] ) ) . '.png' ); ?>"/>
 							<?php } else { ?>
 								<h2><?php echo esc_attr($extension['title']) ?></h2>
 							<?php } ?>
@@ -143,7 +143,7 @@ $extensions = array (
 
 				</ul>
                 <p class="pt-voted-note-large" style="display: none;" >
-					<?php _e( 'You\'ve voted three times! Thank you!', 'paytium' ); ?>
+					<?php esc_html_e( 'You\'ve voted three times! Thank you!', 'paytium' ); ?>
                 </p>
 			</div>
 

@@ -101,7 +101,7 @@ function pt_create_payment( $data ) {
 				($mc_subscribed && strpos($key,'mc-custom-field')) ||
 				($ml_subscribed && strpos($key,'ml-custom-field')) )
 			&& strpos($key, '-label') == false && !empty($prev_meta_val) ) {
-			$value = json_encode([$value => $prev_meta_val]);
+			$value = wp_json_encode([$value => $prev_meta_val]);
 		}
 		if ( (!$ac_subscribed && strpos($key,'ac-custom-field')) ||
 			(!$mc_subscribed && strpos($key,'mc-custom-field')) ||
@@ -157,6 +157,98 @@ function pt_update_payment_meta( $post_id, $meta ) {
 	}
 
 	return true;
+
+}
+
+
+/**
+ * Normalise a stored '_payments' meta value to an array of payment post IDs.
+ *
+ * '_payments' is stored DOUBLE-serialized. The plugin serialize()s the array itself
+ * before handing it to pt_update_payment_meta() (see process-payment-functions.php,
+ * webhook-url-functions.php and features/subscriptions.php), and WordPress'
+ * maybe_serialize() then serializes the already-serialized string a second time -
+ * that is deliberate on WordPress' side, so the value survives the read-side
+ * maybe_unserialize() untouched. get_post_meta() therefore peels only the first
+ * layer and the second has to be peeled here.
+ *
+ * Call sites used to do unserialize( get_post_meta( ... ) ) directly, which is a
+ * fatal TypeError on PHP 8 as soon as the stored value is not a serialized string -
+ * an array from a single-serialized row, a bare payment id, false, or an empty
+ * value. Always returns an array so in_array(), foreach and [] appends are safe.
+ *
+ * NOTE: this only normalises READS. The double-serialized storage format is left
+ * alone on purpose - every existing row in every install uses it, and changing the
+ * writer would need a data migration.
+ *
+ * @since 4.1.3
+ *
+ * @param  mixed $value Raw value as returned by get_post_meta() for '_payments'.
+ * @return array        Payment post IDs, empty array when there are none.
+ */
+function pt_normalize_payments_list( $value ) {
+
+	return pt_unserialize_to_array( $value );
+
+}
+
+/**
+ * Unserialize a stored value and guarantee an array back.
+ *
+ * Paytium stores several options and meta values DOUBLE-serialized, because it
+ * calls serialize() itself before handing the value to update_option() /
+ * update_post_meta(), and WordPress' maybe_serialize() then serializes the
+ * already-serialized string a second time. get_option() / get_post_meta() peel one
+ * layer on read, so the second has to be peeled here. Affected values include
+ * '_payments', 'paytium_item_limits', 'paytium_notifications',
+ * 'paytium_payment_sources', '_pt_email_attachments' and '_pt-uploaded-files'.
+ *
+ * Call sites used to use unserialize() directly. On PHP 8 that is a fatal
+ * TypeError the moment the stored value is not a serialized string - an array from
+ * a single-serialized row, or false / '' when the option does not exist yet - and
+ * the callers then run array_key_exists(), foreach or [] on the result, which
+ * fatals in turn. Always returning an array makes all of those safe.
+ *
+ * Storage format is deliberately left alone: every existing row in every install
+ * is double-serialized and changing the writer would need a data migration.
+ *
+ * @since 4.1.3
+ *
+ * @param  mixed $value Raw value from get_option() or get_post_meta().
+ * @return array        Always an array; empty when there is nothing stored.
+ */
+function pt_unserialize_to_array( $value ) {
+
+	$data = maybe_unserialize( $value );
+
+	if ( is_array( $data ) ) {
+		return $data;
+	}
+
+	if ( '' === $data || null === $data || false === $data ) {
+		return array();
+	}
+
+	// A single bare value was stored instead of a list.
+	return array( $data );
+
+}
+
+/**
+ * Get the list of payment post IDs belonging to a subscription.
+ *
+ * @since 4.1.3
+ *
+ * @param  int|string $subscription_id Subscription post ID.
+ * @return array                       Payment post IDs, empty array when there are none.
+ */
+function pt_get_subscription_payments( $subscription_id ) {
+
+	if ( empty( $subscription_id ) ) {
+		return array();
+	}
+
+	return pt_normalize_payments_list( get_post_meta( $subscription_id, '_payments', true ) );
 
 }
 
@@ -411,7 +503,7 @@ function pt_get_payment_sources() {
 	$paytium_payment_sources = get_option('paytium_payment_sources');
 	if ($paytium_payment_sources) {
 
-		$paytium_payment_sources = unserialize($paytium_payment_sources);
+		$paytium_payment_sources = pt_unserialize_to_array($paytium_payment_sources);
 		$payment_sources = array();
 
 		if ( is_array($paytium_payment_sources)) {
@@ -560,19 +652,17 @@ function pt_cancel_subscription() {
 
 		global $wpdb;
 
-		$payment_id = isset( $_REQUEST['payment_id'] ) ? sanitize_text_field($_REQUEST['payment_id']) : '';
-		$subscription_id = isset( $_REQUEST['subscription_id'] ) ? sanitize_text_field($_REQUEST['subscription_id']) : '';
-		$customer_id     = isset( $_REQUEST['customer_id'] ) ? sanitize_text_field($_REQUEST['customer_id']) : '';
+		$payment_id = isset( $_REQUEST['payment_id'] ) ? sanitize_text_field(wp_unslash( $_REQUEST['payment_id'] )) : '';
+		$subscription_id = isset( $_REQUEST['subscription_id'] ) ? sanitize_text_field(wp_unslash( $_REQUEST['subscription_id'] )) : '';
+		$customer_id     = isset( $_REQUEST['customer_id'] ) ? sanitize_text_field(wp_unslash( $_REQUEST['customer_id'] )) : '';
 
-		$post_query = $wpdb->prepare(
-			"
-						SELECT post_id
-						FROM {$wpdb->prefix}postmeta
-						WHERE meta_key
-						LIKE '_mollie_subscription_id' AND meta_value = '%s'
-						", $subscription_id
+		$post_query = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_mollie_subscription_id' AND meta_value = %s",
+				$subscription_id
+			),
+			ARRAY_N
 		);
-		$post_query = $wpdb->get_results($post_query,ARRAY_N);
 		$pt_subscription_id = isset($post_query[0]) ? $post_query[0][0] : 0;
 
 		if (!current_user_can('administrator') && get_post_field ('post_author', $pt_subscription_id) != get_current_user_id()) {
@@ -631,7 +721,7 @@ add_action( 'wp_ajax_pt_cancel_subscription', 'pt_cancel_subscription' );
 function pt_get_first_payment_id($subscription_id) {
 
 
-	$payments = unserialize(get_post_meta($subscription_id, '_payments',true));
+	$payments = pt_get_subscription_payments( $subscription_id );
 
 	if ($payments) {
 		$first_payment_id = $payments[0];
@@ -640,8 +730,9 @@ function pt_get_first_payment_id($subscription_id) {
 	else {
 
 		global $wpdb;
-		$prepare = $wpdb->prepare( "SELECT post_id FROM " . $wpdb->prefix . "postmeta WHERE meta_key = '_subscription_id' AND meta_value = '%s'",$subscription_id);
-		$first_payment_id = $wpdb->get_var( $prepare );
+		$first_payment_id = $wpdb->get_var(
+			$wpdb->prepare( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_subscription_id' AND meta_value = %s", $subscription_id )
+		);
 	}
 
 	return $first_payment_id;

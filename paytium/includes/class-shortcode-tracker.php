@@ -63,7 +63,7 @@ class Paytium_Shortcode_Tracker {
 	 */
 	public static function print_shortcodes() {
 
-		echo '<pre>' . print_r( self::$shortcodes, true ) . '</pre>';
+		echo '<pre>' . esc_html( wp_json_encode( self::$shortcodes, JSON_PRETTY_PRINT ) ) . '</pre>';
 
 	}
 
