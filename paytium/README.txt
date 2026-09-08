@@ -2,7 +2,7 @@
 Contributors: davdebcom
 Requires at least: 6.5
 Tested up to: 7.1
-Stable tag: 5.0.4
+Stable tag: 5.0.5
 Requires PHP: 7.4
 Tags: ideal, mollie, donation, credit card, wordpress payment forms
 License: GPLv2 or later
@@ -170,6 +170,10 @@ Plugin Say What could also be an option.
 6. **Review all payments and their status** - Check the status of all payments directly in the WordPress admin. Use the built-in "Order Status" to keep track of your own processing directly in WordPress.
 
 == Changelog ==
+
+ = 5.0.5 - September 7, 2026 =
+### All Paytium versions
+FIX : Fixed load order issue for older Mollie Library plugin users
 
  = 5.0.4 –  September 2, 2026 =
 ### All Paytium versions

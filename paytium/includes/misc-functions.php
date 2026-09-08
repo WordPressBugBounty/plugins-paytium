@@ -404,3 +404,47 @@ function pt_has_live_payments( $args = array () ) {
 	return $posts->have_posts();
 
 }
+
+
+
+/**
+ * Unserialize a stored value and guarantee an array back.
+ *
+ * Paytium stores several options and meta values DOUBLE-serialized, because it
+ * calls serialize() itself before handing the value to update_option() /
+ * update_post_meta(), and WordPress' maybe_serialize() then serializes the
+ * already-serialized string a second time. get_option() / get_post_meta() peel one
+ * layer on read, so the second has to be peeled here. Affected values include
+ * '_payments', 'paytium_item_limits', 'paytium_notifications',
+ * 'paytium_payment_sources', '_pt_email_attachments' and '_pt-uploaded-files'.
+ *
+ * Call sites used to use unserialize() directly. On PHP 8 that is a fatal
+ * TypeError the moment the stored value is not a serialized string - an array from
+ * a single-serialized row, or false / '' when the option does not exist yet - and
+ * the callers then run array_key_exists(), foreach or [] on the result, which
+ * fatals in turn. Always returning an array makes all of those safe.
+ *
+ * Storage format is deliberately left alone: every existing row in every install
+ * is double-serialized and changing the writer would need a data migration.
+ *
+ * @since 5.0.4
+ *
+ * @param  mixed $value Raw value from get_option() or get_post_meta().
+ * @return array        Always an array; empty when there is nothing stored.
+ */
+function pt_unserialize_to_array( $value ) {
+
+	$data = maybe_unserialize( $value );
+
+	if ( is_array( $data ) ) {
+		return $data;
+	}
+
+	if ( '' === $data || null === $data || false === $data ) {
+		return array();
+	}
+
+	// A single bare value was stored instead of a list.
+	return array( $data );
+
+}

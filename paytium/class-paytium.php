@@ -685,7 +685,9 @@ class Paytium {
 
 		$pt_plugin_slug = $this->plugin_slug;
 
-        // Include notification functions
+		include_once( PT_PATH . 'includes/misc-functions.php' );
+
+		// Include notification functions
 		include_once( PT_PATH . 'includes/notification-functions.php' );
 
 		// TODO Check for curl -- function_exists( 'curl_version' )
@@ -695,7 +697,7 @@ class Paytium {
 		if ( ! class_exists( '\Mollie\Api\MollieApiClient' ) ) {
             require_once PT_PATH . 'libraries/Mollie/vendor/autoload.php';
 		}
-		else {
+		else if ( ! paytium_check_notifications( 'mollie_third_party' ) ) {
 			try {
 				$ref = new \ReflectionClass('\Mollie\Api\MollieApiClient');
 				$path = $ref->getFileName();
@@ -710,6 +712,7 @@ class Paytium {
                 );
 
 				paytium_add_notification( $notification_counter, $mollie_third_party_notification );
+				update_option( 'paytium_notification_counter', $notification_counter );
 
 			} catch ( \ReflectionException $e ) {
 				paytium_logger( $e->getMessage(), __FILE__, __LINE__ );
@@ -721,8 +724,6 @@ class Paytium {
 		/**
 		 * Include functions
 		 */
-		include_once( PT_PATH . 'includes/misc-functions.php' );
-
 		include_once( PT_PATH . 'includes/process-payment-functions.php' );
 		include_once( PT_PATH . 'includes/webhook-url-functions.php' );
 		include_once( PT_PATH . 'includes/redirect-url-functions.php' );
